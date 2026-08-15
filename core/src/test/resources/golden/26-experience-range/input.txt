@@ -1,0 +1,19 @@
+Backend Engineer
+Harborline Batch builds shipment planning tools for regional logistics teams.
+The codebase is mostly service work with a few older reporting screens.
+
+Requirements:
+- 3-5 years of backend development in a production product team.
+- Java and Spring Boot for service work.
+- PostgreSQL and Docker in daily development.
+- REST APIs for partner integrations and internal support tools.
+- Clear English for short design notes and release summaries.
+- You can break vague operational requests into small deliverables.
+
+Nice to have:
+- Interest in warehouse planning is appreciated.
+- Familiarity with billing edge cases would be nice.
+
+Benefits:
+- Remote-friendly work inside Finland with optional office days.
+- Lunch benefit, wellness budget, and a practical on-call policy.

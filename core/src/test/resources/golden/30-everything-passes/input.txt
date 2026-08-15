@@ -1,0 +1,20 @@
+Backend Engineer
+Northbend Works builds internal workflow software for operations teams.
+The team values steady delivery, clear writing, and predictable support habits.
+
+Requirements:
+- 2 years of backend development in a product team.
+- Bachelor's degree or equivalent practical experience is acceptable.
+- Java and Spring Boot for service work.
+- PostgreSQL and Docker in daily development.
+- REST APIs for integrations with support and reporting systems.
+- Clear English for design notes, release summaries, and handovers.
+- You can ask for missing context before implementation starts.
+
+Nice to have:
+- Interest in workflow automation is appreciated.
+- A calm approach to legacy screens would be nice.
+
+Benefits:
+- Remote-friendly work inside Finland with optional office days.
+- Lunch benefit, wellness budget, and a transparent salary band.

@@ -1,0 +1,20 @@
+Lead Backend Engineer
+Seabright Portal builds customer portals for companies with complex service plans.
+The role leads technical direction while still shipping product changes.
+
+Requirements:
+- 3+ years of backend development in a production product team.
+- Java and Spring Boot for service work.
+- PostgreSQL and Docker in daily development.
+- REST APIs for customer-facing and internal integrations.
+- Clear English for written decisions, planning notes, and support follow-up.
+- You can guide implementation without turning every task into a committee.
+
+Nice to have:
+- Finnish is a plus for office conversations and reading local context.
+- Interest in subscription workflows is appreciated.
+- Experience with mentoring would be nice.
+
+Benefits:
+- Hybrid work from Helsinki with remote weeks by agreement.
+- Lunch benefit, phone benefit, and conference support.

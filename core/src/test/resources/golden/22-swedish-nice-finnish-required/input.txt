@@ -1,0 +1,18 @@
+Backend Engineer
+Nordhaven Desk builds planning software for housing maintenance companies.
+The team works in English internally and keeps most product decisions written.
+
+Requirements:
+- Fluent Finnish is required for tenant workshops and contract handovers.
+- Java and Spring Boot for service work.
+- PostgreSQL and Docker in daily development.
+- Clear written English for product decisions and support notes.
+- You can keep release changes small when priorities move late.
+
+Nice to have:
+- Swedish is a plus for occasional calls with regional partners.
+- Familiarity with property maintenance workflows is appreciated.
+
+Benefits:
+- Remote-friendly work inside Finland with monthly team days.
+- Lunch benefit, wellness budget, and practical home office support.

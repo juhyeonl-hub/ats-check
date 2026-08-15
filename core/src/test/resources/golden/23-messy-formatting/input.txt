@@ -1,0 +1,19 @@
+Backend Engineer
+VantaWave Operations makes scheduling tools for field repair teams.
+
+
+MUST HAVE:
+   - JAVA and Spring Boot services that are easy to read.
+* REST APIs for product and support workflows.
+  * postgres for product data and reporting views.
+    - Docker for local development and release packaging.
+
+
+nice TO HAVE:
+  - Finnish is a plus for office small talk, not customer delivery.
+* interest in route planning would be nice.
+
+BENEFITS:
+  - Hybrid setup from Espoo, Tampere, or remote nearby.
+    * Lunch benefit, phone benefit, and a simple equipment process.
+  - Quiet mornings are protected when incidents are calm.

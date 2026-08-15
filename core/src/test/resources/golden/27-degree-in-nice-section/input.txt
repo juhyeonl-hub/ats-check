@@ -1,0 +1,19 @@
+Backend Engineer
+Oakrail Metrics builds reporting services for industrial maintenance teams.
+The role is product engineering with some analytical features near the edge.
+
+Requirements:
+- Java and Spring Boot for service work.
+- PostgreSQL and Docker in daily development.
+- REST APIs for integrations with planning and reporting systems.
+- Clear English for written decisions and support handovers.
+- You can keep implementation plans small when data quality is uneven.
+
+Nice to have:
+- Master's degree in computer science is a plus for modeling-heavy work.
+- Interest in industrial reporting workflows is appreciated.
+- Familiarity with customer demos would be nice.
+
+Benefits:
+- Hybrid work from Tampere with flexible remote weeks.
+- Lunch benefit, phone benefit, and time for technical reading.

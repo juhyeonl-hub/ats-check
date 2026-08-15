@@ -1,0 +1,16 @@
+Backend Engineer
+Meriwell Queue builds workflow tools for appointment-heavy service teams.
+This is a hands-on product role with customer-facing delivery expectations.
+
+You will need 5+ years of backend engineering in production services.
+Fluent Finnish is mandatory for implementation workshops and release notes.
+Java and Spring Boot are expected in day-to-day service development.
+PostgreSQL and Docker are expected in the team's delivery workflow.
+Clear English is required for written decisions and incident handovers.
+Bachelor's degree or equivalent experience is acceptable.
+You should be comfortable asking for missing product context early.
+
+The team ships in small batches and keeps reviews direct.
+Remote work is possible inside Finland with occasional office days.
+Lunch benefit, phone benefit, and a practical equipment budget are included.
+The interview process has two calls and one technical discussion.

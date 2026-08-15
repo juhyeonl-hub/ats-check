@@ -1,0 +1,19 @@
+Senior Backend Engineer
+Kiventa Relay builds secure messaging tools for municipal service teams.
+The platform is stable, but new integrations still need careful migration work.
+
+Requirements:
+- Fluent Finnish is required for customer discovery and release workshops.
+- 7+ years of backend development in production systems is mandatory.
+- Java and Spring Boot for service work.
+- PostgreSQL and Docker in daily development.
+- Clear English for design notes, incident follow-up, and handovers.
+- Comfortable working with auditors when requirements are still changing.
+
+Nice to have:
+- Experience with case management workflows is appreciated.
+- Interest in accessibility improvements would be nice.
+
+Benefits:
+- Hybrid work from Helsinki with two shared office days.
+- Lunch benefit, phone benefit, and protected maintenance time.

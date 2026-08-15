@@ -1,0 +1,19 @@
+Backend Engineer
+Redwood Orbit builds platform services for subscription analytics teams.
+The team owns APIs, background jobs, deployment templates, and support tooling.
+
+Requirements:
+- Finnish is not required for this position.
+- Java, Spring Boot, Kotlin, Kafka, and Redis are used in backend services.
+- PostgreSQL, Docker, and REST APIs are part of the weekly workflow.
+- You can read logs, explain tradeoffs, and keep production changes small.
+- Clear English for design notes and release summaries is expected.
+
+Nice to have:
+- Kubernetes and Terraform are a plus for infrastructure changes.
+- React and TypeScript would be nice for occasional internal tools.
+- Familiarity with analytics products is appreciated.
+
+Benefits:
+- Remote-friendly work from Finland or nearby EU time zones.
+- Lunch benefit, wellness budget, and a clear on-call rotation.

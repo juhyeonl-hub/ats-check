@@ -1,0 +1,23 @@
+Backend Engineer
+Cloudberry Ledger builds billing automation for small professional services firms.
+The role is practical backend work with product support close to the team.
+
+Requirements:
+- Java and Spring Boot for service work.
+- PostgreSQL and Docker in daily development.
+- REST APIs for integrations with accounting and reporting products.
+- Clear English for release notes, support follow-up, and small design docs.
+
+Benefits:
+- Optional Finnish lessons are available during work hours.
+- Master's studies support is available through an annual learning budget.
+- Lunch benefit, phone benefit, and sports benefit are included.
+- Home office furniture can be ordered after probation.
+- Parents can shift hours around school pickup when delivery allows.
+- The office has quiet rooms and no standing meetings before 10.
+- You get five learning days for conferences, courses, or reading.
+- Summer Fridays are shorter when customer support volume is normal.
+
+Nice to have:
+- Interest in invoicing workflows is appreciated.
+- Exposure to small-company finance teams would be nice.
