@@ -73,14 +73,19 @@ Download a binary for your platform from [Releases](../../releases), verify it,
 and put it on your `PATH`:
 
 ```bash
-curl -LO <release-url>/ats-check-linux-amd64
-curl -LO <release-url>/checksums.txt
+BASE=https://github.com/juhyeonl-hub/ats-check/releases/latest/download
+curl -LO $BASE/ats-check-linux-amd64
+curl -LO $BASE/checksums.txt
 sha256sum -c checksums.txt --ignore-missing
 chmod +x ats-check-linux-amd64
 sudo mv ats-check-linux-amd64 /usr/local/bin/ats-check
 ```
 
-One file. No JVM, no runtime, no container. It starts in about 4 ms.
+Also built for `macos-arm64` and `windows-amd64`.
+
+One file. No JVM, no runtime, no container. It starts in about 4 ms, and the
+Linux build only needs glibc 2.17, so it runs on distributions as old as
+RHEL 7.
 
 ---
 
@@ -214,7 +219,8 @@ means dropping in two files.
 
 ## Status
 
-v0.1. Judges postings, keeps them, and judges them in bulk.
+**v0.1.0 released.** Judges postings, keeps them, and judges them in bulk.
+206 tests, 30 golden cases, 96.6% line coverage on `core`.
 
 Planned for v0.2: fetching postings from public job APIs as a **separate**
 subcommand, so a broken API can never take the checker down with it, and
