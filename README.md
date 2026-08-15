@@ -2,19 +2,7 @@
 
 Decide whether a job posting is worth applying to, in ten seconds, without sending it anywhere.
 
-```
-$ pbpaste | ats-check
-
-VERDICT: SKIP
-
-  ✗ Language    Finnish required
-                "Fluent Finnish and English are required."
-  ✓ Level       Java Developer (no seniority marker)
-  ✓ Seniority   not specified
-  ✓ Degree      not required
-
-  Analysis stopped at hard filter.
-```
+![ats-check judging three postings and then a whole directory](docs/demo.gif)
 
 Reading a posting to the end takes two or three minutes. Finding the Finnish
 requirement in its last paragraph — after you have already started writing a
