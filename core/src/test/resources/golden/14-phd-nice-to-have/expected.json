@@ -4,7 +4,7 @@
   "findings": [
     { "rule": "LANGUAGE", "status": "PASS" },
     { "rule": "EXPERIENCE_YEARS", "status": "PASS" },
-    { "rule": "DEGREE", "status": "PASS" },
+    { "rule": "DEGREE", "status": "PASS", "evidenceContains": "PhD in distributed systems is a plus" },
     { "rule": "SENIORITY_LEVEL", "status": "PASS" },
     { "rule": "SKILLS", "status": "PASS" }
   ],

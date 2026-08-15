@@ -5,7 +5,7 @@
     "languages": ["english", "korean", "finnish"]
   },
   "findings": [
-    { "rule": "LANGUAGE", "status": "PASS" },
+    { "rule": "LANGUAGE", "status": "PASS", "evidenceContains": "Fluent Finnish is required" },
     { "rule": "EXPERIENCE_YEARS", "status": "PASS" },
     { "rule": "DEGREE", "status": "PASS" },
     { "rule": "SENIORITY_LEVEL", "status": "PASS" },

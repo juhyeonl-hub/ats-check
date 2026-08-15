@@ -87,9 +87,6 @@ public final class ExperienceYearsRule {
         String summary = firstPhraseFor(strongestRequirements, status)
                 + " (profile: " + profile.yearsExperience()
                 + ", tolerance: " + profile.yearsTolerance() + ")";
-        if (status == Status.PASS) {
-            return new Finding(RuleId.EXPERIENCE_YEARS, status, summary, List.of());
-        }
 
         return new Finding(
                 RuleId.EXPERIENCE_YEARS,

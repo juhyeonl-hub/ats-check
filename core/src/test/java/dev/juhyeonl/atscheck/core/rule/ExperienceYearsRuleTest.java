@@ -45,6 +45,8 @@ class ExperienceYearsRuleTest {
 
         assertThat(finding.status()).isEqualTo(Status.PASS);
         assertThat(finding.summary()).startsWith("3-5 years");
+        assertThat(finding.evidence()).extracting(Clause::text)
+                .containsExactly("3-5 years with Java");
     }
 
     @Test

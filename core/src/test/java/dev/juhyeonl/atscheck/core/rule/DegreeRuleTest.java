@@ -30,7 +30,8 @@ class DegreeRuleTest {
         Finding finding = evaluate("Requirements:\nMSc in Computer Science", profile(Degree.MASTER));
 
         assertThat(finding.status()).isEqualTo(Status.PASS);
-        assertThat(finding.evidence()).isEmpty();
+        assertThat(finding.evidence()).extracting(Clause::text)
+                .containsExactly("MSc in Computer Science");
     }
 
     @Test
@@ -70,7 +71,8 @@ class DegreeRuleTest {
         Finding finding = evaluate("PhD is a plus", profile(Degree.NONE));
 
         assertThat(finding.status()).isEqualTo(Status.PASS);
-        assertThat(finding.evidence()).isEmpty();
+        assertThat(finding.evidence()).extracting(Clause::text)
+                .containsExactly("PhD is a plus");
     }
 
     private Finding evaluate(String jobText, Profile profile) {

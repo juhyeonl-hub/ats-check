@@ -2,7 +2,7 @@
   "verdict": "APPLY",
   "stoppedAtHardFilter": false,
   "findings": [
-    { "rule": "LANGUAGE", "status": "PASS" },
+    { "rule": "LANGUAGE", "status": "PASS", "evidenceContains": "Finnish is not required" },
     { "rule": "EXPERIENCE_YEARS", "status": "PASS" },
     { "rule": "DEGREE", "status": "PASS" },
     { "rule": "SENIORITY_LEVEL", "status": "PASS" },

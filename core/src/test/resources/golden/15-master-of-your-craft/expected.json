@@ -4,7 +4,7 @@
   "findings": [
     { "rule": "LANGUAGE", "status": "PASS" },
     { "rule": "EXPERIENCE_YEARS", "status": "PASS" },
-    { "rule": "DEGREE", "status": "PASS" },
+    { "rule": "DEGREE", "status": "PASS", "evidenceEmpty": true },
     { "rule": "SENIORITY_LEVEL", "status": "PASS" },
     { "rule": "SKILLS", "status": "PASS" }
   ],

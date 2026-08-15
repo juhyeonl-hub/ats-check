@@ -54,10 +54,6 @@ public final class LanguageRule {
 
         Status status = strongestStatus(assessments);
         String summary = firstSummaryFor(assessments, status);
-        if (status == Status.PASS) {
-            return new Finding(RuleId.LANGUAGE, status, summary, List.of());
-        }
-
         return new Finding(RuleId.LANGUAGE, status, summary, evidenceFor(assessments, status));
     }
 

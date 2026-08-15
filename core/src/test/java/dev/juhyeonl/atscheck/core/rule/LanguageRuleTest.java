@@ -34,7 +34,8 @@ class LanguageRuleTest {
 
         assertThat(finding.status()).isEqualTo(Status.PASS);
         assertThat(finding.summary()).isEqualTo("Finnish required (you have it)");
-        assertThat(finding.evidence()).isEmpty();
+        assertThat(finding.evidence()).extracting(Clause::text)
+                .containsExactly("Fluent Finnish is required");
     }
 
     @Test
@@ -44,6 +45,8 @@ class LanguageRuleTest {
 
         assertThat(finding.status()).isEqualTo(Status.PASS);
         assertThat(finding.summary()).isEqualTo("Finnish is a plus");
+        assertThat(finding.evidence()).extracting(Clause::text)
+                .containsExactly("Finnish is a plus");
     }
 
     @Test
@@ -53,6 +56,22 @@ class LanguageRuleTest {
 
         assertThat(finding.status()).isEqualTo(Status.PASS);
         assertThat(finding.summary()).isEqualTo("Finnish explicitly not required");
+        assertThat(finding.evidence()).extracting(Clause::text)
+                .containsExactly("Finnish is not required");
+    }
+
+    @Test
+    @DisplayName("복지 섹션의 Finnish lessons는 PASS이며 evidence에 원문 절을 보존한다")
+    void finnishLessonsInBenefitsPassesWithEvidence() {
+        Finding finding = evaluate(
+                "Benefits:\nOptional Finnish lessons at lunch, no homework and no test at the end.",
+                profileWithLanguages("english")
+        );
+
+        assertThat(finding.status()).isEqualTo(Status.PASS);
+        assertThat(finding.summary()).isEqualTo("Finnish mentioned, no requirement signal");
+        assertThat(finding.evidence()).extracting(Clause::text)
+                .containsExactly("Optional Finnish lessons at lunch, no homework and no test at the end.");
     }
 
     @Test

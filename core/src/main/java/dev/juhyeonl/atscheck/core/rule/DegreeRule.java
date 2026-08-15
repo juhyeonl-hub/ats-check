@@ -57,7 +57,7 @@ public final class DegreeRule {
 
         Status status = strongestStatus(assessments);
         if (status == Status.PASS) {
-            return new Finding(RuleId.DEGREE, status, "not required", List.of());
+            return new Finding(RuleId.DEGREE, status, "not required", evidenceFor(assessments, status));
         }
 
         return new Finding(

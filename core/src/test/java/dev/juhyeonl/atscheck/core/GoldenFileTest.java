@@ -233,32 +233,52 @@ class GoldenFileTest {
         Map<RuleId, Finding> actualByRule = result.findings().stream()
                 .collect(Collectors.toMap(Finding::rule, finding -> finding));
         for (FindingExpectation expectation : findingExpectations(expected)) {
-            if (expectation.evidenceContains() == null) {
+            if (expectation.evidenceContains() == null && expectation.evidenceEmpty() == null) {
                 continue;
             }
 
             Finding actual = actualByRule.get(expectation.rule());
             assertThat(actual)
                     .as(
-                            "case %s finding for evidence rule %s expected substring <%s> actual finding <null>",
+                            "case %s finding for evidence expectation rule %s actual finding <null>",
                             goldenCase.name(),
-                            expectation.rule(),
-                            expectation.evidenceContains()
+                            expectation.rule()
                     )
                     .isNotNull();
 
-            String evidence = actual.evidence().stream()
-                    .map(Clause::text)
-                    .collect(Collectors.joining("\n"));
-            assertThat(evidence)
-                    .as(
-                            "case %s evidence for %s expected to contain <%s> actual evidence <%s>",
-                            goldenCase.name(),
-                            expectation.rule(),
-                            expectation.evidenceContains(),
-                            evidence
-                    )
-                    .contains(expectation.evidenceContains());
+            if (expectation.evidenceContains() != null) {
+                String evidence = actual.evidence().stream()
+                        .map(Clause::text)
+                        .collect(Collectors.joining("\n"));
+                assertThat(evidence)
+                        .as(
+                                "case %s evidence for %s expected to contain <%s> actual evidence <%s>",
+                                goldenCase.name(),
+                                expectation.rule(),
+                                expectation.evidenceContains(),
+                                evidence
+                        )
+                        .contains(expectation.evidenceContains());
+            }
+
+            if (Boolean.TRUE.equals(expectation.evidenceEmpty())) {
+                assertThat(actual.evidence())
+                        .as(
+                                "case %s evidence for %s expected to be empty actual evidence <%s>",
+                                goldenCase.name(),
+                                expectation.rule(),
+                                actual.evidence()
+                        )
+                        .isEmpty();
+            } else if (Boolean.FALSE.equals(expectation.evidenceEmpty())) {
+                assertThat(actual.evidence())
+                        .as(
+                                "case %s evidence for %s expected not to be empty",
+                                goldenCase.name(),
+                                expectation.rule()
+                        )
+                        .isNotEmpty();
+            }
         }
     }
 
@@ -295,7 +315,8 @@ class GoldenFileTest {
             expectations.add(new FindingExpectation(
                     enumValue(finding, "rule", RuleId.class),
                     enumValue(finding, "status", Status.class),
-                    optionalString(finding, "evidenceContains")
+                    optionalString(finding, "evidenceContains"),
+                    optionalBoolean(finding, "evidenceEmpty")
             ));
         }
         return List.copyOf(expectations);
@@ -355,6 +376,17 @@ class GoldenFileTest {
         return (String) value;
     }
 
+    private static Boolean optionalBoolean(Map<String, Object> values, String key) {
+        Object value = values.get(key);
+        if (value == null) {
+            return null;
+        }
+        assertThat(value)
+                .as("%s must be a boolean", key)
+                .isInstanceOf(Boolean.class);
+        return (Boolean) value;
+    }
+
     private static Set<String> stringSet(
             Map<String, Object> values,
             String key,
@@ -406,7 +438,12 @@ class GoldenFileTest {
         }
     }
 
-    private record FindingExpectation(RuleId rule, Status status, String evidenceContains) {
+    private record FindingExpectation(
+            RuleId rule,
+            Status status,
+            String evidenceContains,
+            Boolean evidenceEmpty
+    ) {
         private FindingPair pair() {
             return new FindingPair(rule, status);
         }
