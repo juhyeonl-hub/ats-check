@@ -95,7 +95,7 @@ class AtsCheckCliTest {
         Execution execution = run("", false, "--version");
 
         assertThat(execution.exitCode()).isEqualTo(0);
-        assertThat(execution.stdout()).contains("ats-check 0.1.0-SNAPSHOT");
+        assertThat(execution.stdout()).contains("ats-check " + BuildInfo.version());
     }
 
     @Test

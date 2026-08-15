@@ -24,7 +24,6 @@ import picocli.CommandLine.Spec;
 @Command(
         name = "ats-check",
         mixinStandardHelpOptions = true,
-        version = "ats-check 0.1.0-SNAPSHOT",
         description = "Check a single job posting against your ATS profile.")
 public final class AtsCheckCli implements Callable<Integer> {
     public static final int EXIT_APPLY = 0;
@@ -109,6 +108,7 @@ public final class AtsCheckCli implements Callable<Integer> {
             Path homeDirectory
     ) {
         CommandLine commandLine = new CommandLine(new AtsCheckCli(stdin, stdinIsPiped, profileLoader, environment));
+        commandLine.getCommandSpec().version("ats-check " + BuildInfo.version());
         commandLine.addSubcommand("save", new SaveCommand(stdin, stdinIsPiped, clipboardReader, clock));
         commandLine.addSubcommand("open", new OpenCommand(profileLoader, browserOpener));
         commandLine.addSubcommand("init", new InitCommand(environment, homeDirectory));

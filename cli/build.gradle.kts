@@ -14,7 +14,49 @@ application {
     mainClass.set("dev.juhyeonl.atscheck.cli.AtsCheckCli")
 }
 
+val generatedVersionSourceDir = layout.buildDirectory.dir("generated/sources/atsCheckVersion/java")
+
+val generateBuildInfo by tasks.registering {
+    val outputFile = generatedVersionSourceDir.map {
+        it.file("dev/juhyeonl/atscheck/cli/BuildInfo.java")
+    }
+
+    inputs.property("atsCheckVersion", provider { project.version.toString() })
+    outputs.file(outputFile)
+
+    doLast {
+        val escapedVersion = project.version.toString()
+            .replace("\\", "\\\\")
+            .replace("\"", "\\\"")
+        val buildInfoFile = outputFile.get().asFile
+        buildInfoFile.parentFile.mkdirs()
+        buildInfoFile.writeText(
+            """
+            package dev.juhyeonl.atscheck.cli;
+
+            final class BuildInfo {
+                private static final String VERSION = "$escapedVersion";
+
+                private BuildInfo() {
+                }
+
+                static String version() {
+                    return VERSION;
+                }
+            }
+            """.trimIndent() + "\n"
+        )
+    }
+}
+
+sourceSets {
+    main {
+        java.srcDir(generatedVersionSourceDir)
+    }
+}
+
 tasks.withType<JavaCompile>().configureEach {
+    dependsOn(generateBuildInfo)
     options.compilerArgs.add("-Aproject=${project.group}/${project.name}")
 }
 

@@ -1,6 +1,6 @@
 allprojects {
     group = "dev.juhyeonl"
-    version = "0.1.0-SNAPSHOT"
+    version = (findProperty("atsCheckVersion") as String?) ?: "0.1.0-SNAPSHOT"
 
     repositories {
         mavenCentral()

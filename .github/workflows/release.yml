@@ -22,6 +22,8 @@ jobs:
       fail-fast: false
       matrix:
         os: [ubuntu-latest, macos-latest, windows-latest]
+    env:
+      RELEASE_TAG: ${{ github.ref_name }}
 
     steps:
       - name: Checkout
@@ -41,8 +43,11 @@ jobs:
       - name: Build and smoke test in Ubuntu 20.04 container
         if: matrix.os == 'ubuntu-latest'
         run: |
+          ats_check_version="${RELEASE_TAG#v}"
+
           docker run --rm -i \
             -e JAVA_TOOL_OPTIONS="-Dfile.encoding=UTF-8" \
+            -e ATS_CHECK_VERSION="$ats_check_version" \
             -v "$PWD":/workspace \
             -w /workspace \
             ubuntu:20.04 bash -s <<'EOF'
@@ -73,7 +78,7 @@ jobs:
           export PATH="$JAVA_HOME/bin:$PATH"
           export JAVA_TOOL_OPTIONS="-Dfile.encoding=UTF-8"
 
-          ./gradlew --no-configuration-cache :cli:nativeCompile
+          ./gradlew --no-configuration-cache -PatsCheckVersion="$ATS_CHECK_VERSION" :cli:nativeCompile
 
           binary="cli/build/native/nativeCompile/ats-check"
           bin_dir="$(dirname "$binary")"
@@ -144,7 +149,9 @@ jobs:
 
       - name: Build native image
         if: matrix.os != 'ubuntu-latest'
-        run: ./gradlew --no-configuration-cache :cli:nativeCompile
+        run: |
+          ats_check_version="${RELEASE_TAG#v}"
+          ./gradlew --no-configuration-cache -PatsCheckVersion="$ats_check_version" :cli:nativeCompile
 
       - name: Package and smoke test native image
         if: matrix.os != 'ubuntu-latest'
