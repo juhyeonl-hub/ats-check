@@ -61,8 +61,4 @@ public final class AtsChecker {
         }
         return false;
     }
-
-    public static String echo(String jobText) {
-        return Objects.requireNonNull(jobText, "jobText").strip();
-    }
 }
