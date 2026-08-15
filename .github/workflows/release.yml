@@ -63,9 +63,11 @@ jobs:
           rm -rf /var/lib/apt/lists/*
 
           curl -s "https://get.sdkman.io" | bash
+          set +u
           # shellcheck disable=SC1091
           source "$HOME/.sdkman/bin/sdkman-init.sh"
           sdk install java 21.0.2-graalce
+          set -u
 
           export JAVA_HOME="$SDKMAN_DIR/candidates/java/current"
           export PATH="$JAVA_HOME/bin:$PATH"
@@ -179,7 +181,7 @@ jobs:
 
           binary="cli/build/native/nativeCompile/ats-check${ext}"
           bin_dir="$(dirname "$binary")"
-          extras="$(find "$bin_dir" -maxdepth 1 -type f ! -name "ats-check${ext}" -print)"
+          extras="$(find "$bin_dir" -maxdepth 1 -type f ! -name "ats-check${ext}" \( -name "*.so" -o -name "*.so.*" -o -name "*.dylib" -o -name "*.dll" \) -print)"
           if [ -n "$extras" ]; then
             echo "Unexpected native build sidecar files:"
             echo "$extras"
