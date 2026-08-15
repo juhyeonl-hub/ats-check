@@ -1,0 +1,263 @@
+name: Release
+
+'on':
+  push:
+    tags: ['v*']
+
+permissions:
+  contents: read
+
+env:
+  JAVA_TOOL_OPTIONS: -Dfile.encoding=UTF-8
+
+defaults:
+  run:
+    shell: bash
+
+jobs:
+  native-build:
+    name: Native build (${{ matrix.os }})
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, macos-latest, windows-latest]
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup GraalVM
+        if: matrix.os != 'ubuntu-latest'
+        uses: graalvm/setup-graalvm@v1
+        with:
+          java-version: '21.0.2'
+          distribution: graalvm-community
+
+      - name: Setup Gradle
+        if: matrix.os != 'ubuntu-latest'
+        uses: gradle/actions/setup-gradle@v4
+
+      - name: Build and smoke test in Ubuntu 20.04 container
+        if: matrix.os == 'ubuntu-latest'
+        run: |
+          docker run --rm -i \
+            -e JAVA_TOOL_OPTIONS="-Dfile.encoding=UTF-8" \
+            -v "$PWD":/workspace \
+            -w /workspace \
+            ubuntu:20.04 bash -s <<'EOF'
+          set -euo pipefail
+
+          export DEBIAN_FRONTEND=noninteractive
+          apt-get update
+          apt-get install -y --no-install-recommends \
+            bash \
+            binutils \
+            build-essential \
+            ca-certificates \
+            curl \
+            findutils \
+            unzip \
+            zip \
+            zlib1g-dev
+          rm -rf /var/lib/apt/lists/*
+
+          curl -s "https://get.sdkman.io" | bash
+          # shellcheck disable=SC1091
+          source "$HOME/.sdkman/bin/sdkman-init.sh"
+          sdk install java 21.0.2-graalce
+
+          export JAVA_HOME="$SDKMAN_DIR/candidates/java/current"
+          export PATH="$JAVA_HOME/bin:$PATH"
+          export JAVA_TOOL_OPTIONS="-Dfile.encoding=UTF-8"
+
+          ./gradlew --no-configuration-cache :cli:nativeCompile
+
+          binary="cli/build/native/nativeCompile/ats-check"
+          bin_dir="$(dirname "$binary")"
+          extras="$(find "$bin_dir" -maxdepth 1 -type f ! -name "ats-check" -print)"
+          if [ -n "$extras" ]; then
+            echo "Unexpected native build sidecar files:"
+            echo "$extras"
+            exit 1
+          fi
+
+          max_glibc="$(objdump -T "$binary" | grep -o 'GLIBC_[0-9.]*' | sort -Vu | tail -1)"
+          if [ -z "$max_glibc" ]; then
+            echo "Could not detect GLIBC requirement."
+            exit 1
+          fi
+          echo "Detected max glibc: $max_glibc"
+
+          required="${max_glibc#GLIBC_}"
+          highest="$(printf '%s\n%s\n' '2.31' "$required" | sort -V | tail -1)"
+          if [ "$highest" != "2.31" ]; then
+            echo "Linux binary requires $max_glibc; expected GLIBC_2.31 or lower."
+            exit 1
+          fi
+
+          case "$(uname -m)" in
+            x86_64|amd64)
+              arch="amd64"
+              ;;
+            arm64|aarch64)
+              arch="arm64"
+              ;;
+            *)
+              echo "Unsupported architecture: $(uname -m)"
+              exit 1
+              ;;
+          esac
+
+          mkdir -p build/ci-dist
+          artifact="ats-check-linux-${arch}"
+          cp "$binary" "build/ci-dist/$artifact"
+          chmod +x "build/ci-dist/$artifact"
+
+          rm -rf /tmp/smoke
+          mkdir -p /tmp/smoke
+          cp "build/ci-dist/$artifact" /tmp/smoke/ats-check
+          cd /tmp/smoke
+
+          ./ats-check --version
+
+          set +e
+          printf 'Java Developer\n\nRequirements:\nFluent Finnish required.\n' | ./ats-check
+          code=$?
+          set -e
+          if [ "$code" -ne 2 ]; then
+            echo "Expected exit code 2 for hard fail sample, got $code."
+            exit 1
+          fi
+
+          set +e
+          printf 'Backend Engineer\n\nRequirements:\nJava.\n' | ./ats-check
+          code=$?
+          set -e
+          if [ "$code" -ne 0 ]; then
+            echo "Expected exit code 0 for passing sample, got $code."
+            exit 1
+          fi
+          EOF
+
+      - name: Build native image
+        if: matrix.os != 'ubuntu-latest'
+        run: ./gradlew --no-configuration-cache :cli:nativeCompile
+
+      - name: Package and smoke test native image
+        if: matrix.os != 'ubuntu-latest'
+        run: |
+          set -euo pipefail
+
+          case "$RUNNER_OS" in
+            macOS)
+              os_label="macos"
+              ext=""
+              ;;
+            Windows)
+              os_label="windows"
+              ext=".exe"
+              ;;
+            *)
+              echo "Unsupported runner OS: $RUNNER_OS"
+              exit 1
+              ;;
+          esac
+
+          case "$(uname -m)" in
+            x86_64|amd64|AMD64)
+              arch="amd64"
+              ;;
+            arm64|aarch64)
+              arch="arm64"
+              ;;
+            *)
+              echo "Unsupported architecture: $(uname -m)"
+              exit 1
+              ;;
+          esac
+
+          binary="cli/build/native/nativeCompile/ats-check${ext}"
+          bin_dir="$(dirname "$binary")"
+          extras="$(find "$bin_dir" -maxdepth 1 -type f ! -name "ats-check${ext}" -print)"
+          if [ -n "$extras" ]; then
+            echo "Unexpected native build sidecar files:"
+            echo "$extras"
+            exit 1
+          fi
+
+          mkdir -p build/ci-dist
+          artifact="ats-check-${os_label}-${arch}${ext}"
+          cp "$binary" "build/ci-dist/$artifact"
+          chmod +x "build/ci-dist/$artifact" || true
+
+          rm -rf /tmp/smoke
+          mkdir -p /tmp/smoke
+          cp "build/ci-dist/$artifact" "/tmp/smoke/ats-check${ext}"
+          cd /tmp/smoke
+
+          "./ats-check${ext}" --version
+
+          set +e
+          printf 'Java Developer\n\nRequirements:\nFluent Finnish required.\n' | "./ats-check${ext}"
+          code=$?
+          set -e
+          if [ "$code" -ne 2 ]; then
+            echo "Expected exit code 2 for hard fail sample, got $code."
+            exit 1
+          fi
+
+          set +e
+          printf 'Backend Engineer\n\nRequirements:\nJava.\n' | "./ats-check${ext}"
+          code=$?
+          set -e
+          if [ "$code" -ne 0 ]; then
+            echo "Expected exit code 0 for passing sample, got $code."
+            exit 1
+          fi
+
+      - name: Locate packaged artifact
+        id: artifact
+        run: |
+          artifact_path="$(find build/ci-dist -maxdepth 1 -type f | head -n 1)"
+          if [ -z "$artifact_path" ]; then
+            echo "No packaged artifact found."
+            exit 1
+          fi
+          echo "artifact_name=$(basename "$artifact_path")" >> "$GITHUB_OUTPUT"
+          echo "artifact_path=$artifact_path" >> "$GITHUB_OUTPUT"
+
+      - name: Upload native artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ steps.artifact.outputs.artifact_name }}
+          path: ${{ steps.artifact.outputs.artifact_path }}
+          if-no-files-found: error
+
+  release:
+    name: Create GitHub Release
+    runs-on: ubuntu-latest
+    needs: native-build
+    permissions:
+      contents: write
+
+    steps:
+      - name: Download native artifacts
+        uses: actions/download-artifact@v4
+        with:
+          path: dist
+          merge-multiple: true
+
+      - name: Generate checksums
+        run: |
+          cd dist
+          sha256sum ats-check-* > checksums.txt
+          cat checksums.txt
+
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          files: |
+            dist/ats-check-*
+            dist/checksums.txt
+          generate_release_notes: true

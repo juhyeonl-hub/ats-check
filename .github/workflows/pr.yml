@@ -1,0 +1,110 @@
+name: PR
+
+'on':
+  pull_request:
+  push:
+    branches: [main]
+
+permissions:
+  contents: read
+
+env:
+  JAVA_TOOL_OPTIONS: -Dfile.encoding=UTF-8
+
+defaults:
+  run:
+    shell: bash
+
+jobs:
+  test:
+    name: Test (${{ matrix.os }}, Java ${{ matrix.java }})
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, macos-latest, windows-latest]
+        java: ['21']
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup GraalVM
+        uses: graalvm/setup-graalvm@v1
+        with:
+          java-version: ${{ matrix.java }}
+          distribution: graalvm-community
+
+      - name: Setup Gradle
+        uses: gradle/actions/setup-gradle@v4
+
+      - name: Build and test
+        run: ./gradlew --no-configuration-cache build
+
+      - name: Generate JaCoCo report
+        run: ./gradlew --no-configuration-cache :core:jacocoTestReport
+
+      - name: Summarize JaCoCo coverage
+        if: always()
+        run: |
+          report="core/build/reports/jacoco/test/jacocoTestReport.xml"
+          if [ ! -f "$report" ]; then
+            {
+              echo "## JaCoCo"
+              echo
+              echo "core coverage report was not generated."
+            } >> "$GITHUB_STEP_SUMMARY"
+            exit 0
+          fi
+
+          if command -v python3 >/dev/null 2>&1; then
+            python_cmd=python3
+          else
+            python_cmd=python
+          fi
+
+          "$python_cmd" - "$report" >> "$GITHUB_STEP_SUMMARY" <<'PY'
+          import sys
+          import xml.etree.ElementTree as ET
+
+          report = sys.argv[1]
+          root = ET.parse(report).getroot()
+
+          def pct(counter):
+              missed = int(counter.attrib["missed"])
+              covered = int(counter.attrib["covered"])
+              total = missed + covered
+              return 0.0 if total == 0 else covered * 100.0 / total
+
+          instruction = next(c for c in root.findall("counter") if c.attrib["type"] == "INSTRUCTION")
+          branch = next((c for c in root.findall("counter") if c.attrib["type"] == "BRANCH"), None)
+
+          print("## JaCoCo")
+          print()
+          print(f"- core instruction coverage: {pct(instruction):.2f}%")
+          if branch is not None:
+              print(f"- core branch coverage: {pct(branch):.2f}%")
+          print("- target: 80% instruction coverage (report only for v0.1)")
+          PY
+
+      - name: Upload test reports
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: test-reports-${{ matrix.os }}
+          path: |
+            core/build/reports/tests/test/
+            core/build/test-results/test/
+            cli/build/reports/tests/test/
+            cli/build/test-results/test/
+          if-no-files-found: warn
+
+      - name: Upload JaCoCo report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: jacoco-core-${{ matrix.os }}
+          path: |
+            core/build/reports/jacoco/test/html/
+            core/build/reports/jacoco/test/jacocoTestReport.xml
+          if-no-files-found: warn
