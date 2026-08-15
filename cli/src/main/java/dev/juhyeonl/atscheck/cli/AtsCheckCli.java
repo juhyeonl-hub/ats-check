@@ -1,9 +1,17 @@
 package dev.juhyeonl.atscheck.cli;
 
 import dev.juhyeonl.atscheck.cli.command.CheckCommand;
+import dev.juhyeonl.atscheck.cli.command.InitCommand;
+import dev.juhyeonl.atscheck.cli.command.OpenCommand;
+import dev.juhyeonl.atscheck.cli.command.SaveCommand;
 import dev.juhyeonl.atscheck.cli.config.ProfileLoader;
+import dev.juhyeonl.atscheck.cli.platform.BrowserOpener;
+import dev.juhyeonl.atscheck.cli.platform.ClipboardReader;
 import java.io.InputStream;
 import java.io.PrintWriter;
+import java.nio.file.Path;
+import java.time.Clock;
+import java.util.Map;
 import java.util.concurrent.Callable;
 import java.util.function.BooleanSupplier;
 import picocli.CommandLine;
@@ -50,7 +58,18 @@ public final class AtsCheckCli implements Callable<Integer> {
     }
 
     public static CommandLine commandLine() {
-        return commandLine(System.in, () -> System.console() == null, new ProfileLoader());
+        Map<String, String> environment = System.getenv();
+        Path homeDirectory = Path.of(System.getProperty("user.home"));
+        return commandLine(
+                System.in,
+                () -> System.console() == null,
+                new ProfileLoader(environment, homeDirectory),
+                ClipboardReader.system(),
+                BrowserOpener.system(),
+                Clock.systemDefaultZone(),
+                environment,
+                homeDirectory
+        );
     }
 
     public static CommandLine commandLine(
@@ -58,7 +77,32 @@ public final class AtsCheckCli implements Callable<Integer> {
             BooleanSupplier stdinIsPiped,
             ProfileLoader profileLoader
     ) {
+        return commandLine(
+                stdin,
+                stdinIsPiped,
+                profileLoader,
+                ClipboardReader.system(),
+                BrowserOpener.system(),
+                Clock.systemDefaultZone(),
+                System.getenv(),
+                Path.of(System.getProperty("user.home"))
+        );
+    }
+
+    public static CommandLine commandLine(
+            InputStream stdin,
+            BooleanSupplier stdinIsPiped,
+            ProfileLoader profileLoader,
+            ClipboardReader clipboardReader,
+            BrowserOpener browserOpener,
+            Clock clock,
+            Map<String, String> environment,
+            Path homeDirectory
+    ) {
         CommandLine commandLine = new CommandLine(new AtsCheckCli(stdin, stdinIsPiped, profileLoader));
+        commandLine.addSubcommand("save", new SaveCommand(stdin, stdinIsPiped, clipboardReader, clock));
+        commandLine.addSubcommand("open", new OpenCommand(profileLoader, browserOpener));
+        commandLine.addSubcommand("init", new InitCommand(environment, homeDirectory));
         commandLine.setParameterExceptionHandler(AtsCheckCli::handleParameterException);
         commandLine.setExecutionExceptionHandler(AtsCheckCli::handleExecutionException);
         return commandLine;

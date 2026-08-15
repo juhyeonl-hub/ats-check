@@ -10,6 +10,7 @@ import java.io.PrintWriter;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.List;
 import java.util.Map;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
@@ -126,6 +127,145 @@ class AtsCheckCliTest {
     }
 
     @Test
+    void savedJobCheckMatchesPlainStdinForVerdictAndFindingStatuses() throws Exception {
+        Path jobsDir = tempDir.resolve("jobs");
+        Path profile = writeProfile("max_seniority: mid\nskills: [java, spring boot]\n");
+        String job = """
+                Senior Backend Engineer
+                Aurora Labs
+
+                Requirements:
+                Strong Java and Spring Boot.
+                """;
+
+        Execution direct = run(job, true, "--profile", profile.toString(), "--json");
+        Execution saved = run(
+                job,
+                true,
+                "save",
+                "--url",
+                "https://example.com/senior",
+                "--jobs-dir",
+                jobsDir.toString()
+        );
+        Path savedPath = Path.of(saved.stdout().strip());
+        Execution fromSavedFile = run(
+                "",
+                false,
+                "--job",
+                savedPath.toString(),
+                "--profile",
+                profile.toString(),
+                "--json"
+        );
+
+        assertThat(saved.exitCode()).isEqualTo(0);
+        assertThat(direct.exitCode()).isEqualTo(fromSavedFile.exitCode());
+        assertThat(jsonCheck(direct)).isEqualTo(jsonCheck(fromSavedFile));
+    }
+
+    @Test
+    void frontMatterTitleIsUsedForSeniorityLevel() throws Exception {
+        Path profile = writeProfile("max_seniority: mid\n");
+
+        Execution execution = run("""
+                ---
+                title: Senior Backend Engineer
+                status: new
+                ---
+
+                Backend Engineer
+                Aurora Labs
+
+                Requirements:
+                Strong Java.
+                """, true, "--profile", profile.toString(), "--json");
+
+        assertThat(execution.exitCode()).isEqualTo(0);
+        assertThat(statusFor(execution, "SENIORITY_LEVEL")).isEqualTo("WARN");
+    }
+
+    @Test
+    void frontMatterWithoutTitleUsesFirstBodyLineAsTitle() throws Exception {
+        Path profile = writeProfile("max_seniority: mid\n");
+
+        Execution execution = run("""
+                ---
+                url: https://example.com/senior
+                status: new
+                ---
+
+                Senior Backend Engineer
+                Aurora Labs
+
+                Requirements:
+                Strong Java.
+                """, true, "--profile", profile.toString(), "--json");
+
+        assertThat(execution.exitCode()).isEqualTo(0);
+        assertThat(statusFor(execution, "SENIORITY_LEVEL")).isEqualTo("WARN");
+    }
+
+    @Test
+    void plainJobFileWithoutFrontMatterMatchesPlainStdin() throws Exception {
+        Path jobFile = tempDir.resolve("job.txt");
+        Files.writeString(jobFile, REVIEW_JOB, StandardCharsets.UTF_8);
+
+        Execution direct = run(REVIEW_JOB, true, "--json");
+        Execution fromFile = run("", false, "--job", jobFile.toString(), "--json");
+
+        assertThat(direct.exitCode()).isEqualTo(fromFile.exitCode());
+        assertThat(jsonCheck(direct)).isEqualTo(jsonCheck(fromFile));
+    }
+
+    @Test
+    void frontMatterLinesDoNotAppearInFindingEvidence() {
+        Execution execution = run("""
+                ---
+                title: Backend Engineer
+                url: Finnish is required.
+                status: new
+                ---
+
+                Backend Engineer
+                Requirements:
+                Fluent Finnish is required.
+                """, true, "--json");
+
+        assertThat(execution.exitCode()).isEqualTo(2);
+        assertThat(allEvidence(execution))
+                .contains("Fluent Finnish is required.")
+                .noneMatch(evidence -> evidence.startsWith("url:") || evidence.startsWith("status:"));
+    }
+
+    @Test
+    void stdinWithFrontMatterMatchesJobFileFrontMatterParsing() throws Exception {
+        Path profile = writeProfile("max_seniority: mid\nskills: [java]\n");
+        String job = """
+                ---
+                title: Senior Backend Engineer
+                url: https://example.com/senior
+                status: new
+                ---
+
+                Backend Engineer
+                Aurora Labs
+
+                Requirements:
+                Strong Java.
+                """;
+        Path jobFile = tempDir.resolve("saved-job.md");
+        Files.writeString(jobFile, job, StandardCharsets.UTF_8);
+
+        Execution fromStdin = run(job, true, "--profile", profile.toString(), "--json");
+        Execution fromFile = run("", false, "--job", jobFile.toString(), "--profile", profile.toString(), "--json");
+
+        assertThat(fromStdin.exitCode()).isEqualTo(fromFile.exitCode());
+        assertThat(jsonCheck(fromStdin)).isEqualTo(jsonCheck(fromFile));
+        assertThat(statusFor(fromStdin, "SENIORITY_LEVEL")).isEqualTo("WARN");
+    }
+
+    @Test
     void terminalOutputContainsVerdictAndStatusSymbol() {
         Execution execution = run(SKIP_JOB, true);
 
@@ -177,6 +317,40 @@ class AtsCheckCliTest {
         return (Map<String, Object>) yaml.load(text);
     }
 
+    private Path writeProfile(String text) throws Exception {
+        Path profile = tempDir.resolve("profile.yml");
+        Files.writeString(profile, text, StandardCharsets.UTF_8);
+        return profile;
+    }
+
+    private JsonCheck jsonCheck(Execution execution) {
+        Map<String, Object> parsed = parseYamlMap(execution.stdout());
+        return new JsonCheck((String) parsed.get("verdict"), findingStatuses(parsed));
+    }
+
+    @SuppressWarnings("unchecked")
+    private List<RuleStatus> findingStatuses(Map<String, Object> parsed) {
+        return ((List<Map<String, Object>>) parsed.get("findings")).stream()
+                .map(finding -> new RuleStatus((String) finding.get("rule"), (String) finding.get("status")))
+                .toList();
+    }
+
+    private String statusFor(Execution execution, String rule) {
+        return jsonCheck(execution).findings().stream()
+                .filter(finding -> finding.rule().equals(rule))
+                .findFirst()
+                .orElseThrow()
+                .status();
+    }
+
+    @SuppressWarnings("unchecked")
+    private List<String> allEvidence(Execution execution) {
+        Map<String, Object> parsed = parseYamlMap(execution.stdout());
+        return ((List<Map<String, Object>>) parsed.get("findings")).stream()
+                .flatMap(finding -> ((List<String>) finding.get("evidence")).stream())
+                .toList();
+    }
+
     private Execution run(String stdin, boolean stdinIsPiped, String... args) {
         ByteArrayOutputStream stdout = new ByteArrayOutputStream();
         ByteArrayOutputStream stderr = new ByteArrayOutputStream();
@@ -201,5 +375,11 @@ class AtsCheckCliTest {
     }
 
     private record Execution(int exitCode, String stdout, String stderr) {
+    }
+
+    private record JsonCheck(String verdict, List<RuleStatus> findings) {
+    }
+
+    private record RuleStatus(String rule, String status) {
     }
 }

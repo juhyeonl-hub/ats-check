@@ -4,6 +4,8 @@ import dev.juhyeonl.atscheck.cli.AtsCheckCli;
 import dev.juhyeonl.atscheck.cli.config.ProfileLoader;
 import dev.juhyeonl.atscheck.cli.render.JsonRenderer;
 import dev.juhyeonl.atscheck.cli.render.TerminalRenderer;
+import dev.juhyeonl.atscheck.cli.store.JobFile;
+import dev.juhyeonl.atscheck.cli.store.JobFileParser;
 import dev.juhyeonl.atscheck.core.AtsChecker;
 import dev.juhyeonl.atscheck.core.model.CheckResult;
 import dev.juhyeonl.atscheck.core.model.JobPosting;
@@ -33,6 +35,7 @@ public final class CheckCommand {
     private boolean debug;
 
     private final ProfileLoader profileLoader;
+    private final JobFileParser jobFileParser = new JobFileParser();
 
     public CheckCommand(ProfileLoader profileLoader) {
         this.profileLoader = Objects.requireNonNull(profileLoader, "profileLoader");
@@ -42,7 +45,7 @@ public final class CheckCommand {
         try {
             String jobText = readJobText(context);
             Profile profile = profileLoader.load(profilePath, context.err());
-            CheckResult result = AtsChecker.check(JobPosting.fromText(jobText), profile);
+            CheckResult result = AtsChecker.check(toJobPosting(jobText), profile);
             render(result, context.out());
             return exitCodeFor(result.verdict());
         } catch (ProfileLoader.ProfileLoadException exception) {
@@ -57,6 +60,22 @@ public final class CheckCommand {
             context.err().flush();
             return AtsCheckCli.EXIT_USAGE;
         }
+    }
+
+    private JobPosting toJobPosting(String jobText) throws UsageException {
+        JobFile jobFile;
+        try {
+            jobFile = jobFileParser.parse(jobText);
+        } catch (JobFileParser.JobFileParseException exception) {
+            throw new UsageException(exception.getMessage(), false);
+        }
+
+        String frontMatterTitle = jobFile.frontMatter().title().strip();
+        if (!frontMatterTitle.isBlank()) {
+            return new JobPosting(frontMatterTitle, jobFile.body());
+        }
+
+        return JobPosting.fromText(jobFile.body());
     }
 
     public boolean isDebug() {
