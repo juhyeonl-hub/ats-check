@@ -1,0 +1,17 @@
+Backend Engineer
+Polar Window develops forecasting tools for energy operations teams.
+The work is practical, but some features need careful statistical thinking.
+
+Requirements:
+- MSc or equivalent experience is expected for research-heavy product work.
+- Java and Spring Boot for service work.
+- PostgreSQL and Docker in daily development.
+- You can describe uncertainty without hiding the tradeoffs.
+
+Nice to have:
+- Interest in energy markets is appreciated.
+- A steady approach to customer demos would be nice.
+
+Benefits:
+- Remote-friendly work from Finland or nearby EU countries.
+- Lunch benefit, phone benefit, and time for technical reading.

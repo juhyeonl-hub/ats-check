@@ -1,0 +1,17 @@
+Junior Developer
+Frostline Desk builds admin tools for small insurance brokers.
+The team expects curiosity, steady communication, and a willingness to ask early.
+
+Requirements:
+- Java and Spring Boot for service work.
+- PostgreSQL and Docker in daily development.
+- Clear English for pull request notes and product questions.
+- You are comfortable pairing with teammates while learning the domain.
+
+Nice to have:
+- Interest in claims handling workflows is appreciated.
+- Some exposure to support work would be nice.
+
+Benefits:
+- Hybrid work from Oulu or remote inside Finland.
+- Lunch benefit, sports benefit, and a structured onboarding plan.

@@ -1,0 +1,17 @@
+Backend Engineer
+Harbor Mint builds planning tools for renewable energy maintenance crews.
+The posting is intentionally light on seniority and focuses on day-to-day work.
+
+Requirements:
+- Java and Spring Boot for service work.
+- PostgreSQL and Docker in daily development.
+- You write small changes, review them carefully, and keep release notes plain.
+- Clear English for async discussions with product and support.
+
+Nice to have:
+- Interest in energy operations is appreciated.
+- Experience with field teams would be nice.
+
+Benefits:
+- Hybrid work from Espoo or remote inside nearby time zones.
+- Lunch benefit, wellness budget, and transparent salary bands.

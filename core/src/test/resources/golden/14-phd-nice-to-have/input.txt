@@ -1,0 +1,17 @@
+Backend Engineer
+Elmstone Analytics builds operational dashboards for companies with messy data.
+The team likes careful measurement, but the role is still product engineering.
+
+Requirements:
+- Java and Spring Boot for service work.
+- PostgreSQL and Docker in daily development.
+- Clear English for planning notes, incident summaries, and release updates.
+- You can break down vague reporting requests into small deliverables.
+
+Nice to have:
+- PhD in distributed systems is a plus.
+- Interest in data quality work is appreciated.
+
+Benefits:
+- Remote work inside Finland with monthly team days.
+- Lunch benefit, wellness budget, and quiet Friday afternoons.

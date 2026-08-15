@@ -1,0 +1,17 @@
+Backend Engineer
+Orbit Yard makes case management tools for Finnish field service teams.
+The group is distributed, but customer discovery still happens close to users.
+
+Requirements:
+- Fluent Finnish is required for customer workshops and release summaries.
+- Java and Spring Boot for service work.
+- PostgreSQL and Docker in daily development.
+- You can turn a rough field note into a clear implementation plan.
+
+Nice to have:
+- Interest in route planning is appreciated.
+- Experience working with non-technical stakeholders would be nice.
+
+Benefits:
+- Helsinki office, remote days, and practical equipment choices.
+- Lunch benefit plus time reserved for maintenance work.

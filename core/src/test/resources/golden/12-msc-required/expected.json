@@ -1,0 +1,10 @@
+{
+  "verdict": "SKIP",
+  "stoppedAtHardFilter": true,
+  "findings": [
+    { "rule": "LANGUAGE", "status": "PASS" },
+    { "rule": "EXPERIENCE_YEARS", "status": "PASS" },
+    { "rule": "DEGREE", "status": "FAIL", "evidenceContains": "MSc degree is mandatory" }
+  ],
+  "skillGap": null
+}

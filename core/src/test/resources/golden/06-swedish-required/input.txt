@@ -1,0 +1,17 @@
+Backend Engineer
+Granite Finch builds document workflows for regional service providers.
+The product is stable, but customers still ask for small changes every month.
+
+Requirements:
+- Fluent Swedish is mandatory for support escalations and release notes.
+- Java and Spring Boot for service work.
+- PostgreSQL and Docker in daily development.
+- You can keep a calm tone when a ticket arrives without full context.
+
+Nice to have:
+- Background in municipal services is appreciated.
+- Interest in improving old forms would be nice.
+
+Benefits:
+- Hybrid work from Turku, Vaasa, or remote inside Finland.
+- Lunch benefit, equipment budget, and no-meeting Wednesday mornings.

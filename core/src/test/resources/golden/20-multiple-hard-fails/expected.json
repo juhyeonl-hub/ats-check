@@ -1,0 +1,10 @@
+{
+  "verdict": "SKIP",
+  "stoppedAtHardFilter": true,
+  "findings": [
+    { "rule": "LANGUAGE", "status": "FAIL", "evidenceContains": "Fluent Finnish is required" },
+    { "rule": "EXPERIENCE_YEARS", "status": "FAIL", "evidenceContains": "7+ years" },
+    { "rule": "DEGREE", "status": "FAIL", "evidenceContains": "MSc degree is required" }
+  ],
+  "skillGap": null
+}

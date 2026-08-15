@@ -1,0 +1,17 @@
+Backend Engineer
+Clearwater Tools builds maintenance software for companies with old equipment.
+The product has a long history, so the team values patience and careful changes.
+
+Requirements:
+- You like to master your craft through code review, feedback, and steady delivery.
+- Java and Spring Boot for service work.
+- PostgreSQL and Docker in daily development.
+- Clear English for writing short plans before implementation starts.
+
+Nice to have:
+- Interest in industrial workflows is appreciated.
+- A pragmatic attitude toward legacy screens would be nice.
+
+Benefits:
+- Hybrid work from Tampere or remote inside Finland.
+- Lunch benefit, bike benefit, and a simple equipment process.

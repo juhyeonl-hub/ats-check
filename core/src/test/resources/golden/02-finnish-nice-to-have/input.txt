@@ -1,0 +1,17 @@
+Backend Engineer
+Aurora Labs maintains billing software for European subscription businesses.
+Most decisions are written down, but the team still likes quick hallway chats.
+
+Requirements:
+- Java and Spring Boot for service work.
+- PostgreSQL and Docker in daily development.
+- Clear written English and a habit of asking early when scope is fuzzy.
+- Willingness to rotate through support once every few weeks.
+
+Nice to have:
+- Finnish is a plus for occasional office conversations.
+- Previous work with financial reporting teams is helpful.
+
+Benefits:
+- Remote-first setup inside Finland or nearby EU time zones.
+- Phone benefit, lunch benefit, and sensible on-call compensation.

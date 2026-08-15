@@ -1,0 +1,17 @@
+Backend Engineer
+Northgate Systems builds internal tools for logistics teams across Finland.
+The backend group is small, practical, and used to working with changing plans.
+
+Requirements:
+- Fluent Finnish is required for customer workshops and written handovers.
+- Java and Spring Boot for service work.
+- PostgreSQL and Docker in daily development.
+- Comfortable reading tickets that are a little incomplete.
+
+Nice to have:
+- Interest in payments or warehouse operations.
+- Calm communication when releases move late in the week.
+
+Benefits:
+- Hybrid office in Helsinki and a regular learning budget.
+- Lunch vouchers and flexible start times.

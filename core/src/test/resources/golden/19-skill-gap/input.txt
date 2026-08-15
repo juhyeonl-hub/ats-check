@@ -1,0 +1,17 @@
+Backend Engineer
+Maple Gate builds logistics planning software for merchants and warehouses.
+The role is implementation-heavy, with a mix of feature work and cleanup.
+
+Requirements:
+- Java, Spring Boot, Kotlin, and Kubernetes are expected in the backend stack.
+- PostgreSQL, Docker, and REST APIs are used every week.
+- Clear English for written decisions and support handovers.
+- You can keep small releases moving without hiding unresolved questions.
+
+Nice to have:
+- Terraform is a plus for infrastructure changes.
+- Interest in supply chain operations is appreciated.
+
+Benefits:
+- Remote-friendly work from Finland or nearby EU countries.
+- Lunch benefit, wellness budget, and a practical equipment policy.

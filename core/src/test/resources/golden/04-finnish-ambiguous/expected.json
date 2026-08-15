@@ -1,0 +1,16 @@
+{
+  "verdict": "REVIEW",
+  "stoppedAtHardFilter": false,
+  "findings": [
+    { "rule": "LANGUAGE", "status": "REVIEW", "evidenceContains": "Working knowledge of Finnish" },
+    { "rule": "EXPERIENCE_YEARS", "status": "PASS" },
+    { "rule": "DEGREE", "status": "PASS" },
+    { "rule": "SENIORITY_LEVEL", "status": "PASS" },
+    { "rule": "SKILLS", "status": "PASS" }
+  ],
+  "skillGap": {
+    "missingRequired": [],
+    "missingNice": [],
+    "matched": ["java", "spring boot", "postgresql", "docker"]
+  }
+}

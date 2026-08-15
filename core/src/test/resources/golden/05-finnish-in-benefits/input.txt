@@ -1,0 +1,17 @@
+Backend Engineer
+Pinecone Works develops workforce planning software for midsize EU retailers.
+The role is hands-on and the team writes most product decisions in English.
+
+Requirements:
+- Java and Spring Boot for service work.
+- PostgreSQL and Docker in daily development.
+- Comfortable joining support calls where the problem is still half described.
+- You care about readable code and boring deployments.
+
+Nice to have:
+- Interest in retail planning or payroll flows is appreciated.
+- A steady approach to incident follow-up would be nice.
+
+Benefits:
+- Optional Finnish lessons at lunch, no homework and no test at the end.
+- Bike benefit, home office budget, and flexible summer Fridays.

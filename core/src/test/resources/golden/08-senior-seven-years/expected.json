@@ -1,0 +1,10 @@
+{
+  "verdict": "SKIP",
+  "stoppedAtHardFilter": true,
+  "findings": [
+    { "rule": "LANGUAGE", "status": "PASS" },
+    { "rule": "EXPERIENCE_YEARS", "status": "FAIL", "evidenceContains": "7+ years" },
+    { "rule": "DEGREE", "status": "PASS" }
+  ],
+  "skillGap": null
+}

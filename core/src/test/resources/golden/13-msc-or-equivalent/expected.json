@@ -1,0 +1,16 @@
+{
+  "verdict": "APPLY",
+  "stoppedAtHardFilter": false,
+  "findings": [
+    { "rule": "LANGUAGE", "status": "PASS" },
+    { "rule": "EXPERIENCE_YEARS", "status": "PASS" },
+    { "rule": "DEGREE", "status": "WARN", "evidenceContains": "MSc or equivalent experience" },
+    { "rule": "SENIORITY_LEVEL", "status": "PASS" },
+    { "rule": "SKILLS", "status": "PASS" }
+  ],
+  "skillGap": {
+    "missingRequired": [],
+    "missingNice": [],
+    "matched": ["java", "spring boot", "postgresql", "docker"]
+  }
+}

@@ -2,4 +2,8 @@ plugins {
     `java-library`
 }
 
-// Runtime dependencies intentionally stay empty for the Spike A core stub.
+dependencies {
+    testImplementation("org.yaml:snakeyaml:2.3")
+}
+
+// Runtime dependencies intentionally stay empty.

@@ -1,0 +1,17 @@
+Backend Engineer
+Silver Birch Software builds checkout services for small marketplaces.
+The team values readable changes and steady delivery more than cleverness.
+
+Requirements:
+- 3+ years of product engineering in a team that owns production behavior.
+- Java and Spring Boot for service work.
+- PostgreSQL and Docker in daily development.
+- Clear written English for planning notes and incident follow-up.
+
+Nice to have:
+- Interest in billing edge cases is appreciated.
+- Previous work with merchants would be nice.
+
+Benefits:
+- Flexible remote work inside Finland.
+- Lunch benefit, sports benefit, and a sensible on-call rotation.

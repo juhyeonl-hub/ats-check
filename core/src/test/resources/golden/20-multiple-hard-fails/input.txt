@@ -1,0 +1,18 @@
+Backend Engineer
+Northstar Queue builds case routing systems for public sector service teams.
+The product is used in formal workflows, so the posting has several strict gates.
+
+Requirements:
+- Fluent Finnish is required for customer workshops and formal handovers.
+- 7+ years of backend development is mandatory.
+- MSc degree is required for this role.
+- Java and Spring Boot for service work.
+- PostgreSQL and Docker in daily development.
+
+Nice to have:
+- Interest in queueing workflows is appreciated.
+- Experience with public procurement would be nice.
+
+Benefits:
+- Helsinki office with flexible remote days.
+- Lunch benefit, phone benefit, and clear release windows.

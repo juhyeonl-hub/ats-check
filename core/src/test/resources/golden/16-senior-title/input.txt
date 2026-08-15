@@ -1,0 +1,17 @@
+Senior Backend Engineer
+Stonebridge Metrics builds reporting products for subscription businesses.
+The team is small enough that implementation details are visible to everyone.
+
+Requirements:
+- Java and Spring Boot for service work.
+- PostgreSQL and Docker in daily development.
+- Clear English for written proposals, release notes, and support follow-up.
+- You can own a change from planning to production without making it dramatic.
+
+Nice to have:
+- Interest in revenue operations is appreciated.
+- Experience improving old reporting flows would be nice.
+
+Benefits:
+- Remote-friendly work inside Finland with optional office days.
+- Lunch benefit, wellness budget, and a predictable on-call policy.

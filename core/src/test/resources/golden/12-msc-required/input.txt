@@ -1,0 +1,17 @@
+Backend Engineer
+Meadow Circuit builds modeling tools for industrial maintenance planning.
+The domain is mathematical, but the product team keeps delivery pragmatic.
+
+Requirements:
+- MSc degree is mandatory for this role because of customer contract terms.
+- Java and Spring Boot for service work.
+- PostgreSQL and Docker in daily development.
+- Clear writing for design notes and operational handovers.
+
+Nice to have:
+- Interest in simulation-heavy products is appreciated.
+- Experience working with researchers would be nice.
+
+Benefits:
+- Hybrid work from Helsinki with flexible start times.
+- Lunch benefit, sports benefit, and conference budget.

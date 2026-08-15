@@ -1,0 +1,17 @@
+Backend Engineer
+Lakepoint Software runs booking flows for transport operators in the Nordics.
+The team is practical, direct, and sometimes receives notes from local partners.
+
+Requirements:
+- Working knowledge of Finnish is useful when clarifying partner messages.
+- Java and Spring Boot for service work.
+- PostgreSQL and Docker in daily development.
+- You keep production changes small and easy to review.
+
+Nice to have:
+- Familiarity with transport planning tools is appreciated.
+- Interest in accessibility work would be nice.
+
+Benefits:
+- Hybrid work from Helsinki or Oulu.
+- Sports benefit, phone benefit, and quiet focus mornings.

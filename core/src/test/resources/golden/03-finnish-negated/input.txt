@@ -1,0 +1,17 @@
+Backend Engineer
+Blue Harbor Digital builds appointment systems for public and private clinics.
+The product has Finnish users, but the engineering team works in English.
+
+Requirements:
+- Finnish is not required for this position.
+- Java and Spring Boot for service work.
+- PostgreSQL and Docker in daily development.
+- You can explain tradeoffs in clear English without turning every note into a novel.
+
+Nice to have:
+- Experience from healthcare workflows is appreciated.
+- A patient approach to old integrations is useful.
+
+Benefits:
+- Two office days in Tampere, otherwise flexible remote work.
+- Occupational healthcare and a predictable release calendar.

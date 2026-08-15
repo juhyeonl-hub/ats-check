@@ -1,0 +1,17 @@
+Backend Engineer
+Juniper Ledger provides invoicing tools for growing service companies.
+The team has a tidy backlog, though priorities still shift near quarter end.
+
+Requirements:
+- Java and Spring Boot for service work.
+- PostgreSQL and Docker in daily development.
+- Comfortable discussing tradeoffs with support and finance people.
+- Clear English for written decisions and handover notes.
+
+Nice to have:
+- 5+ years in regulated product teams is a plus.
+- Exposure to accounting workflows would be nice.
+
+Benefits:
+- Remote work inside Finland with optional office days in Helsinki.
+- Lunch benefit, home office budget, and protected focus time.

@@ -1,0 +1,17 @@
+Head of Engineering
+Violet Range builds scheduling tools for clinics and care providers.
+The engineering group is small, product-minded, and close to customer feedback.
+
+Requirements:
+- Java and Spring Boot for service work.
+- PostgreSQL and Docker in daily development.
+- Clear English for planning, written decisions, and stakeholder updates.
+- You can balance delivery pressure with maintenance work.
+
+Nice to have:
+- Interest in healthcare operations is appreciated.
+- Experience with hiring plans or team rituals would be nice.
+
+Benefits:
+- Hybrid work from Helsinki, with remote weeks by agreement.
+- Lunch benefit, phone benefit, and practical conference support.

@@ -1,0 +1,17 @@
+Backend Engineer
+Copperline Cloud keeps procurement systems running for Nordic manufacturers.
+The work mixes feature delivery, careful migrations, and a fair amount of cleanup.
+
+Requirements:
+- 7+ years of backend development in a production product team.
+- Java and Spring Boot for service work.
+- PostgreSQL and Docker in daily development.
+- You can make tradeoffs visible before a migration becomes risky.
+
+Nice to have:
+- Interest in supplier data quality is appreciated.
+- Experience with long-lived enterprise products would be nice.
+
+Benefits:
+- Remote-friendly setup from Finland, Estonia, or Sweden.
+- Phone benefit, lunch benefit, and paid certification time.
