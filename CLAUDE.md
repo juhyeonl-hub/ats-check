@@ -212,6 +212,27 @@ lead | staff | principal | head       → LEAD
 
 **원문 문장을 반드시 함께 출력한다.** 사용자가 직접 판단할 수 있어야 한다.
 
+### 예외: 명시적 우대 관용구는 섹션보다 강하다 (2026-08-16 실사용에서 확정)
+
+`is/are a plus`, `is/are an advantage`, `is/are a bonus`, `are appreciated` 같은
+**관용구는 그 자체로 모호하지 않다.** 이런 문장이 `Requirements:` 섹션 안에 있어도
+`AMBIGUOUS`가 아니라 **`NICE`로 확정한다.**
+
+```
+Requirements:
+Java and Spring Boot.                    → REQUIRED
+Kotlin and Kubernetes are a plus.        → NICE   (AMBIGUOUS 아님)
+```
+
+**근거:** 섹션 헤더는 문서 구조일 뿐이고, 문장은 회사가 직접 진술한 것이다.
+실제 공고에서 `Requirements:` 안에 우대 항목을 섞어 쓰는 일이 흔하다.
+이때 `AMBIGUOUS`로 두면 해당 스킬이 `missingRequired`로 집계되어
+"필수인데 없는 기술"로 잘못 표시된다.
+
+**적용 범위를 좁게 유지하라.** 명시적 관용구만 해당하며,
+`ideally`, `working knowledge` 같은 완곡 표현은 지금처럼 `AMBIGUOUS`로 남는다.
+관용구가 아닌 어조 마커는 §6의 결합 규칙 표를 그대로 따른다.
+
 ---
 
 ## 7. profile.yml

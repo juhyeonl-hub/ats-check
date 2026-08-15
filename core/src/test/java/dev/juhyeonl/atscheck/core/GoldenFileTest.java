@@ -12,6 +12,7 @@ import dev.juhyeonl.atscheck.core.model.Seniority;
 import dev.juhyeonl.atscheck.core.model.SkillGap;
 import dev.juhyeonl.atscheck.core.model.Status;
 import dev.juhyeonl.atscheck.core.model.Verdict;
+import dev.juhyeonl.atscheck.core.section.SectionClassifier;
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.URISyntaxException;
@@ -57,7 +58,7 @@ class GoldenFileTest {
         assertVerdict(goldenCase, expected, result);
         assertStoppedAtHardFilter(goldenCase, expected, result);
         assertFindings(goldenCase, expected, result);
-        assertSkillGap(goldenCase, expected, result);
+        assertSkillGap(goldenCase, expected, input, result);
         assertEvidenceContains(goldenCase, expected, result);
     }
 
@@ -178,6 +179,7 @@ class GoldenFileTest {
     private static void assertSkillGap(
             GoldenCase goldenCase,
             Map<String, Object> expected,
+            String input,
             CheckResult result
     ) {
         assertThat(expected)
@@ -223,6 +225,30 @@ class GoldenFileTest {
                 stringList(expectedGap, "missingNice"),
                 actual.missingNice()
         );
+        assertSkillGapEvidenceContains(goldenCase, expectedGap, input);
+    }
+
+    private static void assertSkillGapEvidenceContains(
+            GoldenCase goldenCase,
+            Map<String, Object> expectedGap,
+            String input
+    ) {
+        String expectedEvidence = optionalString(expectedGap, "evidenceContains");
+        if (expectedEvidence == null) {
+            return;
+        }
+
+        String clauseText = SectionClassifier.classify(input).stream()
+                .map(Clause::text)
+                .collect(Collectors.joining("\n"));
+        assertThat(clauseText)
+                .as(
+                        "case %s skillGap evidence expected to contain <%s> actual classified clauses <%s>",
+                        goldenCase.name(),
+                        expectedEvidence,
+                        clauseText
+                )
+                .contains(expectedEvidence);
     }
 
     private static void assertEvidenceContains(

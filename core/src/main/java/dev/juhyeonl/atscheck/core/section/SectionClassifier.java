@@ -53,7 +53,12 @@ public final class SectionClassifier {
                 clauses.add(new Clause(
                         splitClause.text(),
                         splitClause.lineNumber(),
-                        combine(currentSection, analysis.toneLevel(), analysis.hasHedge()),
+                        combine(
+                                currentSection,
+                                analysis.toneLevel(),
+                                analysis.hasHedge(),
+                                analysis.hasExplicitNiceTone()
+                        ),
                         currentSection,
                         signals
                 ));
@@ -63,7 +68,12 @@ public final class SectionClassifier {
         return List.copyOf(clauses);
     }
 
-    private static RequirementLevel combine(SectionKind section, RequirementLevel tone, boolean hasHedge) {
+    private static RequirementLevel combine(
+            SectionKind section,
+            RequirementLevel tone,
+            boolean hasHedge,
+            boolean hasExplicitNiceTone
+    ) {
         if (tone == RequirementLevel.NEGATED) {
             return RequirementLevel.NEGATED;
         }
@@ -72,7 +82,7 @@ public final class SectionClassifier {
         }
 
         if (section == SectionKind.REQUIRED_SECTION && tone == RequirementLevel.NICE) {
-            return RequirementLevel.AMBIGUOUS;
+            return hasExplicitNiceTone ? RequirementLevel.NICE : RequirementLevel.AMBIGUOUS;
         }
         if (section == SectionKind.NICE_SECTION && tone == RequirementLevel.REQUIRED) {
             return RequirementLevel.AMBIGUOUS;

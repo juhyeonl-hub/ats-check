@@ -1,0 +1,7 @@
+Developer
+Wolt
+
+Requirements:
+Java, Spring Boot and SQL.
+REST APIs.
+Kotlin and Kubernetes are a plus.

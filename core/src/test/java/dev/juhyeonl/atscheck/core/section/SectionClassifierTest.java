@@ -31,11 +31,11 @@ class SectionClassifierTest {
     }
 
     @Test
-    @DisplayName("REQUIRED 섹션과 NICE 어조가 충돌하면 AMBIGUOUS로 분류한다")
-    void classifiesRequiredSectionAndNiceToneAsAmbiguous() {
+    @DisplayName("REQUIRED 섹션에서도 명시적 NICE 어조는 NICE로 분류한다")
+    void classifiesExplicitNiceToneInRequiredSectionAsNice() {
         Clause clause = onlyClause("Requirements:\nFinnish is a plus");
 
-        assertThat(clause.level()).isEqualTo(RequirementLevel.AMBIGUOUS);
+        assertThat(clause.level()).isEqualTo(RequirementLevel.NICE);
     }
 
     @Test
@@ -80,6 +80,27 @@ class SectionClassifierTest {
 
         assertThat(clause.level()).isEqualTo(RequirementLevel.NICE);
         assertThat(clause.section()).isEqualTo(SectionKind.NONE);
+    }
+
+    @Test
+    @DisplayName("단수와 복수 우대 어조를 NICE로 분류한다")
+    void classifiesSingularAndPluralNiceTonesAsNice() {
+        Clause pluralPlus = onlyClause("Kotlin and Kubernetes are a plus.");
+        Clause singularPlus = onlyClause("Kotlin is a plus.");
+        Clause pluralAdvantage = onlyClause("Docker and Terraform are an advantage.");
+
+        assertThat(pluralPlus.level()).isEqualTo(RequirementLevel.NICE);
+        assertThat(singularPlus.level()).isEqualTo(RequirementLevel.NICE);
+        assertThat(pluralAdvantage.level()).isEqualTo(RequirementLevel.NICE);
+        assertThat(pluralPlus.signals())
+                .extracting(Signal::type, Signal::dictionaryEntry)
+                .contains(tuple(Signal.Type.NICE_TONE, "are a plus"));
+        assertThat(singularPlus.signals())
+                .extracting(Signal::type, Signal::dictionaryEntry)
+                .contains(tuple(Signal.Type.NICE_TONE, "is a plus"));
+        assertThat(pluralAdvantage.signals())
+                .extracting(Signal::type, Signal::dictionaryEntry)
+                .contains(tuple(Signal.Type.NICE_TONE, "are an advantage"));
     }
 
     @Test

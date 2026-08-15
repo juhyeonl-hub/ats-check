@@ -1,0 +1,20 @@
+{
+  "verdict": "APPLY",
+  "stoppedAtHardFilter": false,
+  "findings": [
+    { "rule": "LANGUAGE", "status": "PASS" },
+    { "rule": "EXPERIENCE_YEARS", "status": "PASS" },
+    { "rule": "DEGREE", "status": "PASS" },
+    { "rule": "SENIORITY_LEVEL", "status": "PASS" },
+    { "rule": "SKILLS", "status": "PASS" }
+  ],
+  "profile": {
+    "skills": ["java", "spring boot", "sql", "rest"]
+  },
+  "skillGap": {
+    "missingRequired": [],
+    "missingNice": ["kotlin", "kubernetes"],
+    "matched": ["java", "spring boot", "sql", "rest"],
+    "evidenceContains": "Kotlin and Kubernetes are a plus."
+  }
+}
