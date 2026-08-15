@@ -28,7 +28,7 @@ class SeniorityLevelRuleTest {
         Finding finding = evaluate("Backend Engineer", Seniority.MID);
 
         assertThat(finding.status()).isEqualTo(Status.PASS);
-        assertThat(finding.summary()).isEqualTo("no seniority marker");
+        assertThat(finding.summary()).isEqualTo("Backend Engineer (no seniority marker)");
     }
 
     @Test
@@ -58,7 +58,7 @@ class SeniorityLevelRuleTest {
         Finding finding = SeniorityLevelRule.evaluate(posting, profile(Seniority.MID));
 
         assertThat(finding.status()).isEqualTo(Status.PASS);
-        assertThat(finding.summary()).isEqualTo("no seniority marker");
+        assertThat(finding.summary()).isEqualTo("Backend Engineer (no seniority marker)");
     }
 
     @Test
@@ -67,6 +67,24 @@ class SeniorityLevelRuleTest {
         Finding finding = evaluate("Head of Engineering", Seniority.SENIOR);
 
         assertThat(finding.status()).isEqualTo(Status.WARN);
+    }
+
+    @Test
+    @DisplayName("빈 title은 기존 summary를 유지한다")
+    void blankTitleKeepsExistingNoMarkerSummary() {
+        Finding finding = evaluate(" ", Seniority.MID);
+
+        assertThat(finding.status()).isEqualTo(Status.PASS);
+        assertThat(finding.summary()).isEqualTo("no seniority marker");
+    }
+
+    @Test
+    @DisplayName("긴 title은 40자 뒤에서 줄인다")
+    void longTitleIsTruncatedInSummary() {
+        Finding finding = evaluate("Backend Platform Engineer for Payments Systems", Seniority.MID);
+
+        assertThat(finding.summary())
+                .isEqualTo("Backend Platform Engineer for Payments S… (no seniority marker)");
     }
 
     private Finding evaluate(String title, Seniority maxSeniority) {

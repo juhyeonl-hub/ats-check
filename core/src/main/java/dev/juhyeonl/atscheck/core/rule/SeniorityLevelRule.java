@@ -14,6 +14,7 @@ import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
 public final class SeniorityLevelRule {
+    private static final int MAX_TITLE_LENGTH = 40;
     private static final List<Marker> MARKERS = List.of(
             marker(Seniority.JUNIOR, "junior"),
             marker(Seniority.JUNIOR, "entry"),
@@ -66,11 +67,22 @@ public final class SeniorityLevelRule {
     }
 
     private static String summaryFor(String title, Seniority maxSeniority, boolean hasMarker) {
-        if (!hasMarker) {
+        String normalizedTitle = normalizedTitle(title);
+        if (normalizedTitle.isEmpty()) {
             return "no seniority marker";
         }
-        String normalizedTitle = title.isBlank() ? "(empty title)" : title.strip();
+        if (!hasMarker) {
+            return normalizedTitle + " (no seniority marker)";
+        }
         return normalizedTitle + " (profile max: " + label(maxSeniority) + ")";
+    }
+
+    private static String normalizedTitle(String title) {
+        String normalized = title.strip();
+        if (normalized.length() > MAX_TITLE_LENGTH) {
+            return normalized.substring(0, MAX_TITLE_LENGTH) + "…";
+        }
+        return normalized;
     }
 
     private static String label(Seniority seniority) {
