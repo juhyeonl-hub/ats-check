@@ -1,0 +1,17 @@
+Backend Engineer
+Acme Hiring Lab
+Helsinki, Finland
+
+We are building internal tools for hiring teams across Europe.
+The team works with Java 21, Spring Boot, PostgreSQL, and REST APIs.
+You will design backend services, review pull requests, and improve deployment quality.
+
+Requirements:
+Three or more years of backend engineering experience.
+Strong Java skills and practical experience with SQL databases.
+Clear written and spoken English.
+Comfortable collaborating with product managers and designers.
+
+Nice to have:
+Experience with Docker, Kubernetes, or cloud platforms.
+Interest in developer tooling and observability.
