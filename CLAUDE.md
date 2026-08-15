@@ -65,6 +65,7 @@ Jobscan 같은 "이력서 최적화" 도구가 **아니다.**
 - ❌ 사용자 계정, 인증
 - ❌ 공고 자동 수집 (fetch) — v0.2
 - ❌ 다국어 UI
+- ❌ **이력서 파일 파싱 (PDF/DOCX) — v0.2로 연기. 근거: ADR-005 (실측)**
 
 ### 판단 기준
 
@@ -73,6 +74,7 @@ Jobscan 같은 "이력서 최적화" 도구가 **아니다.**
 1. 이게 없으면 v0.1이 쓸모없어지는가? → 아니면 백로그
 2. 3주 일정을 넘기는가? → 넘기면 백로그
 3. 네트워크나 외부 의존이 생기는가? → 생기면 백로그
+4. **단일 바이너리 배포를 깨뜨리는가? → 깨뜨리면 백로그** (ADR-005에서 얻은 기준)
 
 ---
 
@@ -83,17 +85,29 @@ Jobscan 같은 "이력서 최적화" 도구가 **아니다.**
 | 언어 | **Java 21 (LTS)** | 사용자의 주 타깃이 JVM 백엔드 직무 |
 | 빌드 | **Gradle (Kotlin DSL)** | 멀티모듈, GraalVM 플러그인 지원 |
 | CLI | **Picocli** | GraalVM native-image 공식 지원 |
-| PDF | **Apache PDFBox** | 이력서 파싱 (선택 경로) |
-| DOCX | **Apache POI** | 이력서 파싱 (선택 경로) |
-| YAML | **SnakeYAML** | profile.yml |
+| YAML | **SnakeYAML** | profile.yml, 공고 프론트매터 |
 | 테스트 | **JUnit 5 + AssertJ** | |
 | 네이티브 | **GraalVM native-image** | JVM 없이 실행, 시작 속도 |
+| ~~PDF~~ | ~~Apache PDFBox~~ | **v0.2 연기. ADR-005 참조** |
+| ~~DOCX~~ | ~~Apache POI~~ | **v0.2 연기. ADR-005 참조** |
+
+### 고정 버전 (실측 검증됨)
+
+| 대상 | 버전 |
+|---|---|
+| GraalVM CE | **21.0.2** (`21.0.2-graalce`) — SDKMAN이 제공하는 21 LTS 라인의 유일한 버전 |
+| Gradle | **8.10.2** |
+| Picocli / picocli-codegen | 4.7.6 |
+| GraalVM Native Build Tools | 0.10.4 |
+| JUnit BOM | 5.11.3 |
+| AssertJ | 3.26.3 |
 
 ### 의존성 원칙
 
 - `core` 모듈은 **의존성 최소화**. 이상적으로는 SnakeYAML만.
-- PDFBox/POI는 `cli` 모듈에만. `core`는 순수 텍스트만 다룬다.
+- `core`는 순수 텍스트만 다룬다. 파일·네트워크·stdout을 모른다.
 - 모든 의존성 버전은 **고정(pin)**한다. 동적 버전 금지.
+- **새 의존성을 추가할 때는 네이티브 빌드부터 확인한다.** 사이드카 `.so`가 생기면 채택하지 않는다.
 
 ---
 
@@ -109,8 +123,9 @@ ats-check/
 │       └── AtsChecker.java  # 진입점: check(String jobText, Profile) -> Result
 ├── cli/                     # Picocli 래퍼. 파일 I/O, 출력 포매팅.
 │   └── src/main/java/
-│       ├── CheckCommand.java
-│       ├── extract/         # PDF/DOCX 텍스트 추출
+│       ├── command/         # CheckCommand, SaveCommand, OpenCommand, InitCommand
+│       ├── store/           # 공고 파일 읽기/쓰기, 프론트매터 파싱
+│       ├── clip/            # 클립보드 읽기 (외부 명령 위임, §8 참조)
 │       └── render/          # 터미널 출력, JSON 출력
 └── build.gradle.kts
 ```
@@ -120,12 +135,13 @@ ats-check/
 - **`core`는 문자열을 받아 판정을 반환하는 순수 함수다.** 파일도 네트워크도 모른다.
 - 이 분리 덕분에 나중에 웹/API/확장을 얹을 때 로직 재사용이 가능하다.
 - `core`에 테스트를 집중한다. `cli`는 얇게 유지한다.
+- **`java.desktop`/AWT를 어떤 경로에서도 끌어오지 않는다.** ADR-005에서 확인된 단일 바이너리 파괴 요인이다.
 
 ---
 
 ## 5. 판정 알고리즘
 
-### Stage 1 — 하드 필터 (이력서 불필요)
+### Stage 1 — 하드 필터
 
 하나라도 걸리면 즉시 `SKIP`. 이후 단계를 실행하지 않는다.
 
@@ -148,9 +164,9 @@ lead | staff | principal | head       → LEAD
 
 `profile.max_seniority`를 초과하면 `WARN` (SKIP 아님).
 
-### Stage 3 — 스킬 갭 (이력서 또는 profile 필요)
+### Stage 3 — 스킬 갭
 
-공고에서 기술 키워드를 추출하고 profile/이력서와 대조.
+공고에서 기술 키워드를 추출하고 `profile.skills`와 대조.
 **필수(required)와 우대(nice-to-have)를 구분해서 집계한다.**
 
 ---
@@ -216,8 +232,11 @@ skills:
   - docker
 ```
 
-**중요:** profile만 있으면 이력서 파일 없이도 Stage 1~2가 동작한다.
-PDF 파싱이 GraalVM에서 문제가 생겨도 제품이 성립하도록 하는 안전장치다.
+**중요:** profile만 있으면 이력서 파일 없이 전 단계가 동작한다.
+ADR-005로 PDF 파싱을 v0.1에서 제외한 뒤에도 제품이 성립하는 이유가 이것이다.
+
+**YAML 파싱 규칙:** SnakeYAML로 `Map<String, Object>`까지만 읽고 수동으로 매핑한다.
+`Constructor(Profile.class)` 같은 클래스 바인딩은 리플렉션 메타데이터를 요구하므로 쓰지 않는다.
 
 ---
 
@@ -227,10 +246,63 @@ PDF 파싱이 GraalVM에서 문제가 생겨도 제품이 성립하도록 하는
 
 ```bash
 ats-check --job job.txt                    # 파일
-pbpaste | ats-check                        # stdin (주 사용 경로)
+pbpaste | ats-check                        # stdin (빠른 단건 확인)
 ats-check --job-dir ./jobs                 # 배치
-ats-check --job job.txt --resume cv.pdf    # 이력서 병행
 ```
+
+### 공고 저장: `save` 서브커맨드 (필수)
+
+**배치 모드의 핵심 전제다.** 본문만 저장하면 나중에 판정 결과를 봐도
+원래 공고로 돌아갈 방법이 없어서 배치 모드가 무용지물이 된다.
+
+```bash
+ats-check save --url "https://linkedin.com/jobs/view/12345"
+```
+
+동작:
+1. 클립보드(또는 stdin)에서 공고 본문을 읽는다
+2. `--url`, 저장 시각을 프론트매터로 붙인다
+3. 회사명/직무명을 본문에서 추출 시도. 실패하면 빈 값으로 둔다
+4. `jobs/<company>-<title>.md` 로 저장 (충돌 시 접미사)
+
+### 클립보드·브라우저 접근 규칙 (필수)
+
+**AWT(`Toolkit.getSystemClipboard()`, `Desktop.browse()`)를 쓰지 않는다.**
+`java.desktop`을 끌어와 단일 바이너리 배포를 깨뜨린다 (ADR-005와 동일한 실패 유형).
+headless 환경(SSH·CI·X 없는 WSL)에서도 죽는다.
+
+**외부 명령에 위임한다:**
+
+| 용도 | Linux/WSL | macOS | Windows |
+|---|---|---|---|
+| 클립보드 읽기 | `wl-paste` → `xclip -selection clipboard -o` | `pbpaste` | `powershell -c Get-Clipboard` |
+| URL 열기 | `xdg-open` (WSL은 `wslview`) | `open` | `cmd /c start` |
+
+명령이 없거나 실패하면 **stdin으로 폴백**하고, 이유를 stderr에 안내한다.
+
+### 공고 파일 포맷
+
+YAML 프론트매터 + 본문. 사람이 읽고 손으로 고칠 수 있어야 한다.
+
+```
+---
+url: https://linkedin.com/jobs/view/12345
+company: Wolt
+title: Backend Engineer (Kotlin)
+saved_at: 2026-08-15T14:32:00+03:00
+status: new              # new | applied | rejected | skipped
+---
+
+We are looking for a Backend Engineer...
+```
+
+**파싱 규칙:**
+- 프론트매터가 없으면 본문 전체를 공고로 취급한다 (하위 호환)
+- 알 수 없는 키는 무시하되 재저장 시 보존한다
+- `status` 기본값은 `new`
+
+**`jobs/`는 `.gitignore`에 넣는다.** 저장된 공고 원문이 공개 레포에 커밋되면
+§9의 익명화 정책이 무의미해진다.
 
 ### 단일 공고 출력
 
@@ -260,22 +332,40 @@ VERDICT: APPLY
 
 ### 배치 출력
 
+**URL을 반드시 포함한다.** 판정 결과에서 원래 공고로 돌아갈 수 있어야 한다.
+
 ```
-VERDICT  FILE                   REASON
-SKIP     alten.txt              Finnish required
-SKIP     siili.txt              Senior (7+ years)
-APPLY    wolt.txt               missing 2 required skills
-APPLY    ravogen.txt            full match
-REVIEW   solita.txt             Finnish "working knowledge" — ambiguous
+VERDICT  COMPANY   TITLE                 REASON                URL
+SKIP     Alten     Java Developer        Finnish required      linkedin.com/jobs/view/111
+SKIP     Siili     Backend Architect     Senior (7+ years)     linkedin.com/jobs/view/222
+APPLY    Wolt      Backend Engineer      missing: Kotlin, K8s  linkedin.com/jobs/view/333
+APPLY    Ravogen   Fullstack Developer   full match            ravogen.fi/careers/12
+REVIEW   Solita    Node.js Developer     Finnish ambiguous     solita.fi/careers/456
 
 5 jobs · 2 apply · 1 review · 2 skip
+```
+
+- URL은 스킴을 생략해서 표시하되, 터미널 하이퍼링크(OSC 8)로 감싼다
+- **비-TTY(파이프·리다이렉트)에서는 OSC 8과 색상을 자동으로 끈다.** 제어문자가 섞이면
+  스크립트 연동이 깨진다. `--json`에는 어떤 경우에도 넣지 않는다
+- 컬럼 폭은 터미널 너비에 맞춰 자른다. 좁으면 URL 컬럼부터 생략
+- 프론트매터가 없어서 메타데이터가 비면 파일명으로 대체한다
+
+### 브라우저 열기
+
+```bash
+ats-check open wolt          # 파일명 부분 일치로 URL 열기
+ats-check open --all-apply   # APPLY 판정 전부 열기
 ```
 
 ### JSON 출력
 
 `--json` 플래그로 스크립트 연동 가능하게. 스키마는 안정적으로 유지.
+프론트매터의 모든 메타데이터(url, company, title, status)를 포함한다.
 
 ### 종료 코드
+
+**`check`(기본 커맨드)는 판정을 종료 코드로 반환한다:**
 
 | 코드 | 의미 |
 |---|---|
@@ -284,6 +374,31 @@ REVIEW   solita.txt             Finnish "working knowledge" — ambiguous
 | 2 | SKIP |
 | 64 | 사용법 오류 |
 | 70 | 내부 오류 |
+
+**그 외 서브커맨드(`save`/`open`/`init`/`list`/`mark`)는 판정 코드를 쓰지 않는다:**
+
+| 코드 | 의미 |
+|---|---|
+| 0 | 성공 |
+| 64 | 사용법 오류 |
+| 70 | 내부 오류 |
+
+이유: `save` 성공이 0을 반환하면 "이 공고는 APPLY"와 구분되지 않아 스크립트가 오작동한다.
+
+배치 모드(`--job-dir`)는 **가장 나쁜 판정**을 종료 코드로 반환한다 (SKIP 하나라도 있으면 2).
+
+### 지원 상태 추적 (조건부 — Day 10-13에 여유가 있을 때만)
+
+**필수가 아니다.** Day 13 시점에 일정이 빠듯하면 v0.2로 미룬다.
+
+```bash
+ats-check list --status new        # 아직 처리 안 한 것
+ats-check mark wolt --applied      # 지원 완료 표시
+ats-check list --status applied    # 지원한 것들
+```
+
+구현은 프론트매터의 `status` 필드를 읽고 쓰는 것뿐이다.
+별도 DB나 인덱스 파일을 만들지 않는다 — 파일이 곧 상태다.
 
 ---
 
@@ -307,10 +422,15 @@ core/src/test/resources/golden/
 
 익명화: 회사명과 개인정보는 치환. 요건 문장 구조는 원본 유지.
 
+### CLI 계약 테스트
+
+**종료 코드는 제품 계약이다.** `cli`에 최소한의 통합 테스트를 둔다:
+`check`의 0/1/2, 사용법 오류 64, 서브커맨드의 0/64.
+
 ### 커버리지 목표
 
 - `core`: 80% 이상
-- `cli`: 목표 없음 (얇게 유지)
+- `cli`: 목표 없음 (얇게 유지, 단 종료 코드는 반드시 테스트)
 
 ---
 
@@ -356,6 +476,15 @@ jobs:
     - 체인지로그 자동 생성
 ```
 
+### CI 제약 (Spike A에서 실측)
+
+- **`org.gradle.configuration-cache`를 켜지 말 것.** Native Build Tools 0.10.4의
+  `generateResourcesConfigFile`이 configuration cache 저장 중 실패한다
+- **Gradle은 8.x로 고정.** `cli` 빌드에서 Gradle 9.0 deprecation 경고가 발생한다
+- **`JAVA_HOME`을 명시할 것.** GraalVM toolchain 자동 감지가 꺼져 있고 `JAVA_HOME`에 의존한다
+- **릴리스 스모크 테스트는 바이너리를 다른 디렉토리로 복사해서 실행할 것.**
+  사이드카 `.so` 의존이 생기면 즉시 잡아낸다 (ADR-005)
+
 ### 주의: Linux 빌드는 컨테이너 안에서
 
 최신 Ubuntu 러너에서 직접 빌드하면 glibc 버전이 높아서 구버전 배포판에서 실행되지 않는다.
@@ -371,6 +500,7 @@ jobs:
   - ADR-002: 왜 LLM을 쓰지 않는가
   - ADR-003: 왜 컨테이너 안에서 네이티브 빌드를 하는가
   - ADR-004: 왜 core/cli를 분리했는가
+  - **ADR-005: 왜 v0.1에서 PDF를 파싱하지 않는가** ✅ 작성됨
 
 ---
 
@@ -378,21 +508,20 @@ jobs:
 
 | 기간 | 목표 | 완료 기준 |
 |---|---|---|
-| **Day 1-3** | **스파이크** | `./gradlew nativeCompile` 성공. 바이너리가 파일 읽어서 텍스트 출력 |
+| ~~Day 1-3~~ | ~~스파이크~~ | ✅ **완료 (Day 0)** — §15 참조 |
 | Day 4-9 | 판정 로직 | 3단계 알고리즘 + 섹션 분류 + 골든 파일 20개 |
-| Day 10-13 | CLI 완성 | stdin, 배치, `--json`, 출력 포매팅, 이력서 파싱 |
+| Day 10-13 | CLI 완성 | `save`/`open`, 프론트매터 파싱, stdin, 배치, `--json` |
 | Day 14-17 | CI/CD | 매트릭스 테스트, 릴리스 자동화, 체크섬 |
 | Day 18-21 | 공개 | README, 데모 GIF, ADR, v0.1.0 릴리스 |
 
-### Day 1-3이 관문이다
+### Day 1-3이 관문이다 → 통과함
 
-PDFBox는 리플렉션을 많이 사용해서 GraalVM native-image에서 문제가 생길 수 있다.
-**기능을 다 만든 뒤에 네이티브 빌드를 시도하지 말 것.**
+원래 계획: PDFBox가 GraalVM에서 문제를 일으킬 수 있으므로 3일 안에 판단한다.
 
-3일 안에 판단:
-- 네이티브 빌드 성공 → 그대로 진행
-- PDFBox만 문제 → PDF 지원을 v0.2로 미루고 profile.yml 모드로 진행
-- 전면 실패 → fat JAR + jpackage로 폴백
+**실제 결과 (Day 0):**
+- 네이티브 빌드 성공 → 그대로 진행 ✅
+- PDFBox만 문제 → PDF 지원을 v0.2로 미루고 profile.yml 모드로 진행 ✅ **이 분기를 실행함**
+- 전면 실패 → fat JAR + jpackage 폴백 (해당 없음)
 
 ---
 
@@ -406,6 +535,14 @@ PDFBox는 리플렉션을 많이 사용해서 GraalVM native-image에서 문제�
 - TE-palvelut (핀란드 고용경제부) 공공 구인 API
 - RSS 피드 (Duunitori, Oikotie 등)
 - **`check`와 반드시 분리**: fetch는 외부 API 의존이라 깨질 수 있고, check는 순수 로컬이라 안 깨진다
+
+### v0.2 — 이력서 파싱 (ADR-005에서 연기)
+
+선택지는 ADR-005 마지막 절에 정리되어 있다. 요약:
+1. tracing agent로 AWT 메타데이터 대량 수집
+2. 텍스트 레이어만 읽는 경량 PDF 추출기 직접 구현
+3. AWT 비의존 라이브러리 탐색
+4. JVM 폴백 배포 분리 (JVM에서는 PDFBox가 정상 동작함을 확인함)
 
 ### v0.3 이후 후보
 
@@ -421,7 +558,9 @@ PDFBox는 리플렉션을 많이 사용해서 GraalVM native-image에서 문제�
 v0.1.0은 다음을 모두 만족할 때 릴리스한다:
 
 - [ ] 3개 OS 네이티브 바이너리가 GitHub Releases에 있다
+- [ ] **각 바이너리가 단일 파일이다** (사이드카 라이브러리 없음)
 - [ ] 체크섬이 첨부되어 있다
+- [ ] `save`로 저장한 공고가 배치 결과에서 URL과 함께 나온다
 - [ ] 골든 파일 테스트 30개 이상이 CI에서 통과한다
 - [ ] README에 설치 방법과 데모가 있다
 - [ ] ADR 4개가 작성되어 있다
@@ -435,6 +574,7 @@ v0.1.0은 다음을 모두 만족할 때 릴리스한다:
 - **스코프 추가 요청이 오면 이 문서 2절을 근거로 되묻는다.**
 - 커밋은 작게, 자주. 각 커밋은 테스트를 통과한 상태.
 - 막히면 폴백 경로를 택하고 백로그에 남긴다. 멈추지 않는다.
+- **새 의존성은 네이티브 빌드 + 격리 실행으로 먼저 검증한다.**
 
 ---
 
@@ -446,29 +586,47 @@ v0.1.0은 다음을 모두 만족할 때 릴리스한다:
 
 - 레포 생성, `git init` (branch `main`)
 - 로컬 환경 점검: Java Temurin 21.0.10 있음 / Gradle 없음 / **GraalVM `native-image` 없음** / Codex 0.133.0 있음
-- Day 1-3 스파이크 착수 (Codex 위임)
 
-### 2026-08-15 — Spike A 통과 ✅ (§11 "네이티브 빌드 성공 → 그대로 진행" 경로 확정)
+### 2026-08-15 — Spike A 통과 ✅ (커밋 `2e78961`)
 
 **결과: `./gradlew :cli:nativeCompile` 성공. Day 1-3 관문 통과.**
 
 | 항목 | 실측값 |
 |---|---|
 | native 빌드 시간 | 17초 (clean 기준) |
-| 바이너리 크기 | 17MB |
+| 바이너리 크기 | 17MB (단일 파일) |
 | 시작 시간 | 0.004s |
 | core 테스트 | 2개 통과 (clean 빌드로 실제 실행 확인) |
 
-- 툴체인 (모두 홈 디렉토리, sudo 미사용):
-  - SDKMAN 5.23.0
-  - **GraalVM CE 21.0.2** (`21.0.2-graalce`) — SDKMAN이 제공하는 **21 LTS 라인의 유일한 버전**. 상위는 25.2.4(JDK 25 기반)라 §3의 Java 21 고정과 충돌하므로 채택하지 않음
-  - Gradle 8.10.2
-- `zip`이 시스템에 없어 SDKMAN 설치가 1차 실패 → Info-ZIP 3.0을 `~/.local/bin`에 빌드해 해결 (sudo 금지 제약 때문)
-- picocli-codegen이 `reflect-config.json` / `proxy-config.json` / `resource-config.json`을 자동 생성 → 네이티브 리플렉션 이슈 없음
-- exit code 규격 동작 확인: 정상 0 / 파일 없음 64
+- 툴체인은 모두 홈 디렉토리에 설치 (sudo 미사용): SDKMAN 5.23.0 / GraalVM CE 21.0.2 / Gradle 8.10.2
+- `zip`이 시스템에 없어 SDKMAN 설치가 1차 실패 → Info-ZIP 3.0을 `~/.local/bin`에 빌드해 해결
+- picocli-codegen이 `reflect-config.json` / `proxy-config.json` / `resource-config.json`을 자동 생성 → 리플렉션 이슈 없음
+- exit code 규격 확인: 정상 0 / 파일 없음 64
 - `core`에 네트워크·파일 I/O·stdout 없음 (grep 검증)
 
-**알려진 제약 (사실):**
-- `org.gradle.configuration-cache=true`는 사용 불가. Native Build Tools 0.10.4의 `generateResourcesConfigFile`이 실패한다. **CI에서도 켜지 말 것.**
-- `cli` 빌드에서 Gradle 9.0 deprecation 경고가 발생한다 (`core`에서는 발생하지 않음 → NBT 플러그인 또는 `application` 플러그인 경로). Gradle 8.x 고정으로 회피 중.
-- GraalVM toolchain 자동 감지가 꺼져 있고 `JAVA_HOME`에 의존한다. CI에서 명시적으로 설정해야 한다.
+### 2026-08-15 — Spike B **FAIL** → PDF 지원 v0.1에서 제외
+
+**결정: 이력서 파싱(PDF/DOCX)을 v0.2로 연기. 상세 근거는 ADR-005.**
+
+| 경로 | 결과 |
+|---|---|
+| JVM | ✅ 텍스트 추출 성공 |
+| nativeCompile | ✅ 빌드 성공 (25.2s) |
+| **네이티브 실행** | ❌ `Fatal error reported via JNI: Could not allocate library name` |
+| **바이너리만 복사해 실행** | ❌ `UnsatisfiedLinkError: No awt in java.library.path` |
+
+- PDFBox가 `java.desktop`/AWT를 끌어와 사이드카 `.so` **8개**를 생성한다 (`libawt.so`, `libfontmanager.so` 등)
+- 배포 산출물: 17MB 파일 1개 → **43MB 파일 9개**. 단일 바이너리 전제가 깨진다
+- 리플렉션 메타데이터 누락이 아니라 구조적 문제. `--initialize-at-build-time`은 22개 이상 연쇄 초기화 클래스를 만들며 빌드 실패
+- 실험 코드는 `spike/pdfbox` 브랜치에 보존. `main`에 병합하지 않음
+- **이 실패를 Day 0에 발견해서 스코프 결정으로 끝났다.** 기능 완성 후였다면 Day 18에 발견했을 것이다
+
+### 2026-08-15 — 헌장 개정 반영
+
+사용자가 `save`/`open`/프론트매터/상태추적을 추가. 반영하면서 아래를 함께 확정:
+
+- **종료 코드 분리** (§8): `save` 성공(0)이 "APPLY"와 충돌하는 문제 → `check`만 판정 코드 사용
+- **클립보드·브라우저는 외부 명령 위임** (§8): AWT를 쓰면 ADR-005와 동일하게 단일 바이너리가 깨진다
+- **`jobs/`를 `.gitignore`에** (§8): 공고 원문이 공개 레포에 커밋되면 §9 익명화 정책이 무의미
+- **SnakeYAML은 Map 파싱만** (§7): 클래스 바인딩은 리플렉션 메타데이터를 요구
+- **OSC 8은 비-TTY에서 비활성화** (§8): 파이프에 제어문자가 섞이면 스크립트 연동이 깨진다

@@ -2,3 +2,6 @@ build/
 .gradle/
 *.class
 bin/
+
+# saved job postings — never commit (see CLAUDE.md §8)
+jobs/
