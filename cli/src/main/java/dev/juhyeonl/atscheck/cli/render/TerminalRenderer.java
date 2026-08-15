@@ -174,7 +174,7 @@ public final class TerminalRenderer {
                 .collect(Collectors.joining(", "));
     }
 
-    private static String displayNameFor(String skill) {
+    public static String displayNameFor(String skill) {
         return SKILL_DISPLAY_NAMES.getOrDefault(skill, skill);
     }
 }

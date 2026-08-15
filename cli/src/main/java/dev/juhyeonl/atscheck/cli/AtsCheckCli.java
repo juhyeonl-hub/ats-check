@@ -43,13 +43,22 @@ public final class AtsCheckCli implements Callable<Integer> {
     private final BooleanSupplier stdinIsPiped;
 
     public AtsCheckCli() {
-        this(System.in, () -> System.console() == null, new ProfileLoader());
+        this(System.in, () -> System.console() == null, new ProfileLoader(), System.getenv());
     }
 
     public AtsCheckCli(InputStream stdin, BooleanSupplier stdinIsPiped, ProfileLoader profileLoader) {
+        this(stdin, stdinIsPiped, profileLoader, System.getenv());
+    }
+
+    public AtsCheckCli(
+            InputStream stdin,
+            BooleanSupplier stdinIsPiped,
+            ProfileLoader profileLoader,
+            Map<String, String> environment
+    ) {
         this.stdin = stdin;
         this.stdinIsPiped = stdinIsPiped;
-        this.checkCommand = new CheckCommand(profileLoader);
+        this.checkCommand = new CheckCommand(profileLoader, Map.copyOf(environment));
     }
 
     public static void main(String[] args) {
@@ -99,7 +108,7 @@ public final class AtsCheckCli implements Callable<Integer> {
             Map<String, String> environment,
             Path homeDirectory
     ) {
-        CommandLine commandLine = new CommandLine(new AtsCheckCli(stdin, stdinIsPiped, profileLoader));
+        CommandLine commandLine = new CommandLine(new AtsCheckCli(stdin, stdinIsPiped, profileLoader, environment));
         commandLine.addSubcommand("save", new SaveCommand(stdin, stdinIsPiped, clipboardReader, clock));
         commandLine.addSubcommand("open", new OpenCommand(profileLoader, browserOpener));
         commandLine.addSubcommand("init", new InitCommand(environment, homeDirectory));

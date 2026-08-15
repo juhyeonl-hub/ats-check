@@ -1,14 +1,16 @@
 package dev.juhyeonl.atscheck.cli.command;
 
 import dev.juhyeonl.atscheck.cli.AtsCheckCli;
+import dev.juhyeonl.atscheck.cli.batch.BatchCheckResult;
+import dev.juhyeonl.atscheck.cli.batch.BatchJobResult;
+import dev.juhyeonl.atscheck.cli.batch.CheckedJob;
+import dev.juhyeonl.atscheck.cli.batch.JobCheckService;
 import dev.juhyeonl.atscheck.cli.config.ProfileLoader;
+import dev.juhyeonl.atscheck.cli.render.BatchJsonRenderer;
+import dev.juhyeonl.atscheck.cli.render.BatchTerminalRenderer;
 import dev.juhyeonl.atscheck.cli.render.JsonRenderer;
 import dev.juhyeonl.atscheck.cli.render.TerminalRenderer;
-import dev.juhyeonl.atscheck.cli.store.JobFile;
-import dev.juhyeonl.atscheck.cli.store.JobFileParser;
-import dev.juhyeonl.atscheck.core.AtsChecker;
 import dev.juhyeonl.atscheck.core.model.CheckResult;
-import dev.juhyeonl.atscheck.core.model.JobPosting;
 import dev.juhyeonl.atscheck.core.model.Profile;
 import dev.juhyeonl.atscheck.core.model.Verdict;
 import java.io.IOException;
@@ -17,13 +19,22 @@ import java.io.PrintWriter;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.Comparator;
+import java.util.List;
+import java.util.Map;
 import java.util.Objects;
+import java.util.stream.Stream;
 import picocli.CommandLine;
 import picocli.CommandLine.Option;
 
 public final class CheckCommand {
+    private static final int DEFAULT_TERMINAL_WIDTH = 100;
+
     @Option(names = "--job", paramLabel = "<path>", description = "UTF-8 job posting text file.")
     private Path jobPath;
+
+    @Option(names = "--job-dir", paramLabel = "<path>", description = "Directory of UTF-8 job posting files.")
+    private Path jobDirectory;
 
     @Option(names = "--profile", paramLabel = "<path>", description = "profile.yml path.")
     private Path profilePath;
@@ -31,24 +42,45 @@ public final class CheckCommand {
     @Option(names = "--json", description = "Print a stable JSON result.")
     private boolean json;
 
+    @Option(names = "--width", paramLabel = "<n>", description = "Terminal width for batch table output.")
+    private Integer width;
+
+    @Option(names = "--no-hyperlink", description = "Disable OSC 8 hyperlinks in batch table output.")
+    private boolean noHyperlink;
+
     @Option(names = "--debug", description = "Print stack traces for unexpected internal errors.")
     private boolean debug;
 
     private final ProfileLoader profileLoader;
-    private final JobFileParser jobFileParser = new JobFileParser();
+    private final JobCheckService jobCheckService = new JobCheckService();
+    private final Map<String, String> environment;
 
     public CheckCommand(ProfileLoader profileLoader) {
+        this(profileLoader, System.getenv());
+    }
+
+    public CheckCommand(ProfileLoader profileLoader, Map<String, String> environment) {
         this.profileLoader = Objects.requireNonNull(profileLoader, "profileLoader");
+        this.environment = Map.copyOf(Objects.requireNonNull(environment, "environment"));
     }
 
     public int execute(Context context) {
         try {
+            validateOptions();
+            if (jobDirectory != null) {
+                return executeBatch(context);
+            }
+
             String jobText = readJobText(context);
             Profile profile = profileLoader.load(profilePath, context.err());
-            CheckResult result = AtsChecker.check(toJobPosting(jobText), profile);
-            render(result, context.out());
-            return exitCodeFor(result.verdict());
+            CheckedJob checkedJob = jobCheckService.check(jobText, profile);
+            render(checkedJob.result(), context.out());
+            return exitCodeFor(checkedJob.result().verdict());
         } catch (ProfileLoader.ProfileLoadException exception) {
+            context.err().println(exception.getMessage());
+            context.err().flush();
+            return AtsCheckCli.EXIT_USAGE;
+        } catch (JobCheckService.JobCheckException exception) {
             context.err().println(exception.getMessage());
             context.err().flush();
             return AtsCheckCli.EXIT_USAGE;
@@ -62,20 +94,66 @@ public final class CheckCommand {
         }
     }
 
-    private JobPosting toJobPosting(String jobText) throws UsageException {
-        JobFile jobFile;
+    private void validateOptions() throws UsageException {
+        if (jobPath != null && jobDirectory != null) {
+            throw new UsageException("cannot use --job and --job-dir together", false);
+        }
+
+        if (width != null && width < 1) {
+            throw new UsageException("--width must be positive", false);
+        }
+    }
+
+    private int executeBatch(Context context) throws ProfileLoader.ProfileLoadException, UsageException {
+        if (!Files.isDirectory(jobDirectory)) {
+            throw new UsageException("job directory not found: " + jobDirectory, false);
+        }
+
+        List<Path> jobFiles = listJobFiles();
+        if (jobFiles.isEmpty()) {
+            context.out().println("No job files found in " + jobDirectory);
+            context.out().flush();
+            return AtsCheckCli.EXIT_APPLY;
+        }
+
+        Profile profile = profileLoader.load(profilePath, context.err());
+        BatchCheckResult batch = new BatchCheckResult(jobFiles.stream()
+                .map(path -> checkBatchFile(path, profile, context.err()))
+                .filter(Objects::nonNull)
+                .toList());
+        renderBatch(batch, context.out());
+        return exitCodeFor(batch.worstVerdict());
+    }
+
+    private List<Path> listJobFiles() throws UsageException {
+        try (Stream<Path> paths = Files.list(jobDirectory)) {
+            return paths
+                    .filter(Files::isRegularFile)
+                    .filter(this::isJobFile)
+                    .sorted(Comparator.comparing(path -> path.getFileName().toString()))
+                    .toList();
+        } catch (IOException exception) {
+            throw new UsageException(
+                    "failed to list job directory: " + jobDirectory + " (" + exception.getMessage() + ")",
+                    false
+            );
+        }
+    }
+
+    private boolean isJobFile(Path path) {
+        String fileName = path.getFileName().toString();
+        return fileName.endsWith(".md") || fileName.endsWith(".txt");
+    }
+
+    private BatchJobResult checkBatchFile(Path path, Profile profile, PrintWriter err) {
         try {
-            jobFile = jobFileParser.parse(jobText);
-        } catch (JobFileParser.JobFileParseException exception) {
-            throw new UsageException(exception.getMessage(), false);
+            CheckedJob checkedJob = jobCheckService.check(Files.readString(path, StandardCharsets.UTF_8), profile);
+            return new BatchJobResult(path.getFileName().toString(), checkedJob.jobFile(), checkedJob.result());
+        } catch (IOException | JobCheckService.JobCheckException exception) {
+            err.println("warning: skipping " + path.getFileName() + ": " + exception.getMessage());
+            err.flush();
+            return null;
         }
-
-        String frontMatterTitle = jobFile.frontMatter().title().strip();
-        if (!frontMatterTitle.isBlank()) {
-            return new JobPosting(frontMatterTitle, jobFile.body());
-        }
-
-        return JobPosting.fromText(jobFile.body());
     }
 
     public boolean isDebug() {
@@ -129,6 +207,31 @@ public final class CheckCommand {
                 : TerminalRenderer.render(result);
         out.print(rendered);
         out.flush();
+    }
+
+    private void renderBatch(BatchCheckResult batch, PrintWriter out) {
+        String rendered = json
+                ? BatchJsonRenderer.render(batch)
+                : BatchTerminalRenderer.render(batch, terminalWidth(), !noHyperlink && System.console() != null);
+        out.print(rendered);
+        out.flush();
+    }
+
+    private int terminalWidth() {
+        if (width != null) {
+            return width;
+        }
+
+        String columns = environment.get("COLUMNS");
+        if (columns == null || columns.isBlank()) {
+            return DEFAULT_TERMINAL_WIDTH;
+        }
+        try {
+            int parsed = Integer.parseInt(columns.strip());
+            return parsed > 0 ? parsed : DEFAULT_TERMINAL_WIDTH;
+        } catch (NumberFormatException exception) {
+            return DEFAULT_TERMINAL_WIDTH;
+        }
     }
 
     private int exitCodeFor(Verdict verdict) {
