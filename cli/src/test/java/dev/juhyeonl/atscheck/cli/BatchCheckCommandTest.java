@@ -5,6 +5,7 @@ import static org.junit.jupiter.api.Assumptions.assumeFalse;
 import static org.junit.jupiter.api.Assumptions.assumeTrue;
 
 import dev.juhyeonl.atscheck.cli.config.ProfileLoader;
+import dev.juhyeonl.atscheck.cli.render.DisplayWidth;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.OutputStreamWriter;
@@ -348,6 +349,50 @@ class BatchCheckCommandTest {
     }
 
     @Test
+    void koreanBatchOutputTranslatesHeadersVerdictsReasonsAndSummary() throws Exception {
+        Path jobs = jobsDir();
+        writeJob(jobs, "01-apply.md", APPLY_FULL_MATCH);
+        writeJob(jobs, "02-review.md", REVIEW_JOB);
+        writeJob(jobs, "03-skip.md", SKIP_JOB);
+
+        Execution execution = runBatch(jobs, "--lang", "ko", "--width", "100", "--no-hyperlink");
+
+        String header = execution.stdout().lines().findFirst().orElseThrow();
+        assertThat(header).contains("판정", "회사", "직무", "사유", "URL");
+        assertThat(header).doesNotContain("VERDICT", "COMPANY", "TITLE", "REASON");
+        assertThat(execution.stdout())
+                .contains("지원 가능", "확인 필요", "제외")
+                .contains("모두 충족", "핀란드어 - 요구 여부 불명확", "핀란드어 필수");
+        assertThat(lastNonBlankLine(execution.stdout()))
+                .isEqualTo("공고 3건 \u00b7 지원 1 \u00b7 확인 1 \u00b7 제외 1");
+        assertThat(List.of(
+                displayIndexOf(header, "회사"),
+                displayIndexOf(lineContaining(execution.stdout(), "Ravogen"), "Ravogen"),
+                displayIndexOf(lineContaining(execution.stdout(), "Solita"), "Solita"),
+                displayIndexOf(lineContaining(execution.stdout(), "Alten"), "Alten")
+        )).containsOnly(11);
+    }
+
+    @Test
+    void koreanBatchNarrowWidthTruncatesByDisplayWidth() throws Exception {
+        Path jobs = jobsDir();
+        writeJob(jobs, "long-korean.md", jobWithFrontMatter(
+                "가나다라마바사아자차카타",
+                "백엔드엔지니어직무제목길게",
+                "https://example.com/jobs/korean-long-title"
+        ));
+
+        Execution execution = runBatch(jobs, "--lang", "ko", "--width", "42", "--no-hyperlink");
+
+        assertThat(execution.stdout().lines().findFirst().orElseThrow()).doesNotContain("URL");
+        assertThat(koreanTableLines(execution.stdout()))
+                .allSatisfy(line -> assertThat(DisplayWidth.width(line)).isLessThanOrEqualTo(42));
+        assertThat(execution.stdout())
+                .contains(ELLIPSIS)
+                .doesNotContain("가나다라마바사아자차카타", "백엔드엔지니어직무제목길게");
+    }
+
+    @Test
     void noHyperlinkOptionDisablesOsc8Output() throws Exception {
         Path jobs = jobsDir();
         writeJob(jobs, "wolt.md", APPLY_WITH_GAP);
@@ -574,6 +619,15 @@ class BatchCheckCommandTest {
                 .toList();
     }
 
+    private List<String> koreanTableLines(String stdout) {
+        return stdout.lines()
+                .filter(line -> line.startsWith("판정")
+                        || line.startsWith("지원")
+                        || line.startsWith("확인")
+                        || line.startsWith("제외"))
+                .toList();
+    }
+
     private String lineContaining(String stdout, String text) {
         return stdout.lines()
                 .filter(line -> line.contains(text))
@@ -586,6 +640,10 @@ class BatchCheckCommandTest {
                 .filter(line -> !line.isBlank())
                 .reduce((first, second) -> second)
                 .orElseThrow();
+    }
+
+    private int displayIndexOf(String line, String text) {
+        return DisplayWidth.width(line.substring(0, line.indexOf(text)));
     }
 
     @SuppressWarnings("unchecked")

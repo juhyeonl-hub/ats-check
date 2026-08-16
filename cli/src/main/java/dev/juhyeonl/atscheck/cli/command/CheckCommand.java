@@ -9,6 +9,7 @@ import dev.juhyeonl.atscheck.cli.config.ProfileLoader;
 import dev.juhyeonl.atscheck.cli.render.BatchJsonRenderer;
 import dev.juhyeonl.atscheck.cli.render.BatchTerminalRenderer;
 import dev.juhyeonl.atscheck.cli.render.JsonRenderer;
+import dev.juhyeonl.atscheck.cli.render.TerminalLanguage;
 import dev.juhyeonl.atscheck.cli.render.TerminalRenderer;
 import dev.juhyeonl.atscheck.core.model.CheckResult;
 import dev.juhyeonl.atscheck.core.model.Profile;
@@ -29,6 +30,7 @@ import picocli.CommandLine.Option;
 
 public final class CheckCommand {
     private static final int DEFAULT_TERMINAL_WIDTH = 100;
+    private static final String LANGUAGE_ENVIRONMENT_VARIABLE = "ATS_CHECK_LANG";
 
     @Option(names = "--job", paramLabel = "<path>", description = "UTF-8 job posting text file.")
     private Path jobPath;
@@ -41,6 +43,9 @@ public final class CheckCommand {
 
     @Option(names = "--json", description = "Print a stable JSON result.")
     private boolean json;
+
+    @Option(names = "--lang", paramLabel = "<lang>", description = "Terminal output language: en or ko.")
+    private String languageOption;
 
     @Option(names = "--width", paramLabel = "<n>", description = "Terminal width for batch table output.")
     private Integer width;
@@ -67,14 +72,15 @@ public final class CheckCommand {
     public int execute(Context context) {
         try {
             validateOptions();
+            TerminalLanguage language = terminalLanguage(context.err());
             if (jobDirectory != null) {
-                return executeBatch(context);
+                return executeBatch(context, language);
             }
 
             String jobText = readJobText(context);
             Profile profile = profileLoader.load(profilePath, context.err());
             CheckedJob checkedJob = jobCheckService.check(jobText, profile);
-            render(checkedJob.result(), context.out());
+            render(checkedJob.result(), context.out(), language);
             return exitCodeFor(checkedJob.result().verdict());
         } catch (ProfileLoader.ProfileLoadException exception) {
             context.err().println(exception.getMessage());
@@ -104,7 +110,10 @@ public final class CheckCommand {
         }
     }
 
-    private int executeBatch(Context context) throws ProfileLoader.ProfileLoadException, UsageException {
+    private int executeBatch(
+            Context context,
+            TerminalLanguage language
+    ) throws ProfileLoader.ProfileLoadException, UsageException {
         if (!Files.isDirectory(jobDirectory)) {
             throw new UsageException("job directory not found: " + jobDirectory, false);
         }
@@ -121,8 +130,31 @@ public final class CheckCommand {
                 .map(path -> checkBatchFile(path, profile, context.err()))
                 .filter(Objects::nonNull)
                 .toList());
-        renderBatch(batch, context.out());
+        renderBatch(batch, context.out(), language);
         return exitCodeFor(batch.worstVerdict());
+    }
+
+    private TerminalLanguage terminalLanguage(PrintWriter err) {
+        String selected = languageOption;
+        String source = "--lang";
+        if (selected == null || selected.isBlank()) {
+            selected = environment.get(LANGUAGE_ENVIRONMENT_VARIABLE);
+            source = LANGUAGE_ENVIRONMENT_VARIABLE;
+        }
+
+        if (selected == null || selected.isBlank()) {
+            return TerminalLanguage.EN;
+        }
+
+        String unsupportedValue = selected;
+        String unsupportedSource = source;
+        return TerminalLanguage.parse(selected)
+                .orElseGet(() -> {
+                    err.println("warning: unsupported " + unsupportedSource + " value '" + unsupportedValue
+                            + "', falling back to English");
+                    err.flush();
+                    return TerminalLanguage.EN;
+                });
     }
 
     private List<Path> listJobFiles() throws UsageException {
@@ -201,18 +233,18 @@ public final class CheckCommand {
         }
     }
 
-    private void render(CheckResult result, PrintWriter out) {
+    private void render(CheckResult result, PrintWriter out, TerminalLanguage language) {
         String rendered = json
                 ? JsonRenderer.render(result)
-                : TerminalRenderer.render(result);
+                : TerminalRenderer.render(result, language);
         out.print(rendered);
         out.flush();
     }
 
-    private void renderBatch(BatchCheckResult batch, PrintWriter out) {
+    private void renderBatch(BatchCheckResult batch, PrintWriter out, TerminalLanguage language) {
         String rendered = json
                 ? BatchJsonRenderer.render(batch)
-                : BatchTerminalRenderer.render(batch, terminalWidth(), !noHyperlink && System.console() != null);
+                : BatchTerminalRenderer.render(batch, terminalWidth(), !noHyperlink && System.console() != null, language);
         out.print(rendered);
         out.flush();
     }

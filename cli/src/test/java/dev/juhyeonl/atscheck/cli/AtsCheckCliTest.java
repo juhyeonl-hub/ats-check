@@ -3,6 +3,8 @@ package dev.juhyeonl.atscheck.cli;
 import static org.assertj.core.api.Assertions.assertThat;
 
 import dev.juhyeonl.atscheck.cli.config.ProfileLoader;
+import dev.juhyeonl.atscheck.cli.platform.BrowserOpener;
+import dev.juhyeonl.atscheck.cli.platform.ClipboardReader;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.OutputStreamWriter;
@@ -10,6 +12,7 @@ import java.io.PrintWriter;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.time.Clock;
 import java.util.List;
 import java.util.Map;
 import org.junit.jupiter.api.Test;
@@ -275,6 +278,49 @@ class AtsCheckCliTest {
     }
 
     @Test
+    void langOptionRendersKoreanTerminalOutput() {
+        Execution execution = run(APPLY_JOB, true, "--lang", "ko");
+
+        assertThat(execution.exitCode()).isEqualTo(0);
+        assertThat(execution.stdout())
+                .contains("판정: 지원 가능")
+                .contains("언어")
+                .doesNotContain("VERDICT: APPLY");
+    }
+
+    @Test
+    void environmentLanguageIsUsedAndLangOptionOverridesIt() {
+        Execution fromEnvironment = run(Map.of("ATS_CHECK_LANG", "ko"), APPLY_JOB, true);
+        Execution overridden = run(Map.of("ATS_CHECK_LANG", "ko"), APPLY_JOB, true, "--lang", "en");
+
+        assertThat(fromEnvironment.stdout()).contains("판정: 지원 가능");
+        assertThat(overridden.stdout())
+                .contains("VERDICT: APPLY")
+                .doesNotContain("판정:");
+    }
+
+    @Test
+    void jsonOutputStaysEnglishWithKoreanLanguage() {
+        Execution execution = run(SKIP_JOB, true, "--lang", "ko", "--json");
+
+        Map<String, Object> parsed = parseYamlMap(execution.stdout());
+        assertThat(parsed).containsEntry("verdict", "SKIP");
+        assertThat(execution.stdout())
+                .contains("\"summary\": \"Finnish required\"")
+                .contains("\"Fluent Finnish is required.\"")
+                .doesNotContain("핀란드어", "판정");
+    }
+
+    @Test
+    void unknownLangFallsBackToEnglishWithWarningAndNormalExit() {
+        Execution execution = run(APPLY_JOB, true, "--lang", "xx");
+
+        assertThat(execution.exitCode()).isEqualTo(0);
+        assertThat(execution.stdout()).contains("VERDICT: APPLY");
+        assertThat(execution.stderr()).contains("warning: unsupported --lang value 'xx'");
+    }
+
+    @Test
     void failFindingPrintsQuotedEvidence() {
         Execution execution = run(SKIP_JOB, true);
 
@@ -352,12 +398,22 @@ class AtsCheckCliTest {
     }
 
     private Execution run(String stdin, boolean stdinIsPiped, String... args) {
+        return run(Map.of(), stdin, stdinIsPiped, args);
+    }
+
+    private Execution run(Map<String, String> environment, String stdin, boolean stdinIsPiped, String... args) {
         ByteArrayOutputStream stdout = new ByteArrayOutputStream();
         ByteArrayOutputStream stderr = new ByteArrayOutputStream();
+        Path home = tempDir.resolve("home");
         CommandLine commandLine = AtsCheckCli.commandLine(
                 new ByteArrayInputStream(stdin.getBytes(StandardCharsets.UTF_8)),
                 () -> stdinIsPiped,
-                new ProfileLoader(Map.of(), tempDir.resolve("home"))
+                new ProfileLoader(Map.of(), home),
+                ClipboardReader.system(),
+                BrowserOpener.system(),
+                Clock.systemUTC(),
+                environment,
+                home
         );
         commandLine.setOut(writer(stdout));
         commandLine.setErr(writer(stderr));

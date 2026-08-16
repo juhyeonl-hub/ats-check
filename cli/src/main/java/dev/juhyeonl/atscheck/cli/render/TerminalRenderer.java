@@ -8,6 +8,7 @@ import dev.juhyeonl.atscheck.core.model.SkillGap;
 import dev.juhyeonl.atscheck.core.model.Status;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
@@ -62,16 +63,26 @@ public final class TerminalRenderer {
     }
 
     public static String render(CheckResult result) {
+        return render(result, TerminalLanguage.EN);
+    }
+
+    public static String render(CheckResult result, TerminalLanguage language) {
+        Objects.requireNonNull(language, "language");
+
         StringBuilder output = new StringBuilder();
-        output.append("VERDICT: ").append(result.verdict()).append("\n\n");
+        output.append(LocalizedText.verdictPrefix(language))
+                .append(LocalizedText.verdict(result.verdict(), language))
+                .append("\n\n");
 
         for (RuleId rule : DISPLAY_ORDER) {
-            findingFor(result, rule).ifPresent(finding -> appendFinding(output, finding));
+            findingFor(result, rule).ifPresent(finding -> appendFinding(output, finding, language));
         }
 
-        appendSkillGap(output, result.skillGap());
+        appendSkillGap(output, result.skillGap(), language);
         if (result.stoppedAtHardFilter()) {
-            output.append("\n  Analysis stopped at hard filter.\n");
+            output.append("\n  ")
+                    .append(LocalizedText.hardFilterStopped(language))
+                    .append("\n");
         }
 
         return output.toString();
@@ -83,36 +94,26 @@ public final class TerminalRenderer {
                 .findFirst();
     }
 
-    private static void appendFinding(StringBuilder output, Finding finding) {
+    private static void appendFinding(StringBuilder output, Finding finding, TerminalLanguage language) {
         output.append(INDENT)
                 .append(symbolFor(finding.status()))
                 .append(" ")
-                .append(paddedLabel(labelFor(finding.rule())))
-                .append(summaryForTerminal(finding))
+                .append(paddedLabel(LocalizedText.label(finding.rule(), language)))
+                .append(summaryForTerminal(finding, language))
                 .append("\n");
         appendEvidence(output, finding);
     }
 
     private static String paddedLabel(String label) {
-        return String.format("%-" + LABEL_WIDTH + "s", label);
+        return DisplayWidth.padRight(label, LABEL_WIDTH);
     }
 
-    private static String summaryForTerminal(Finding finding) {
-        String summary = finding.summary();
+    private static String summaryForTerminal(Finding finding, TerminalLanguage language) {
+        String summary = SummaryTranslator.translate(finding.summary(), language);
         if (finding.rule() == RuleId.EXPERIENCE_YEARS && finding.status() == Status.WARN) {
-            return summary + " — borderline";
+            return summary + " — " + LocalizedText.borderline(language);
         }
         return summary;
-    }
-
-    private static String labelFor(RuleId rule) {
-        return switch (rule) {
-            case LANGUAGE -> "Language";
-            case EXPERIENCE_YEARS -> "Seniority";
-            case DEGREE -> "Degree";
-            case SENIORITY_LEVEL -> "Level";
-            case SKILLS -> "";
-        };
     }
 
     private static String symbolFor(Status status) {
@@ -142,28 +143,28 @@ public final class TerminalRenderer {
         return text.replace("\\", "\\\\").replace("\"", "\\\"");
     }
 
-    private static void appendSkillGap(StringBuilder output, SkillGap skillGap) {
+    private static void appendSkillGap(StringBuilder output, SkillGap skillGap, TerminalLanguage language) {
         if (skillGap == null) {
             return;
         }
 
         StringBuilder block = new StringBuilder();
-        appendSkillLine(block, "MISSING (required)", skillGap.missingRequired());
-        appendSkillLine(block, "MISSING (nice)", skillGap.missingNice());
-        appendSkillLine(block, "MATCHED", skillGap.matched());
+        appendSkillLine(block, "MISSING (required)", skillGap.missingRequired(), language);
+        appendSkillLine(block, "MISSING (nice)", skillGap.missingNice(), language);
+        appendSkillLine(block, "MATCHED", skillGap.matched(), language);
 
         if (!block.isEmpty()) {
             output.append("\n").append(block);
         }
     }
 
-    private static void appendSkillLine(StringBuilder output, String label, Set<String> skills) {
+    private static void appendSkillLine(StringBuilder output, String label, Set<String> skills, TerminalLanguage language) {
         if (skills.isEmpty()) {
             return;
         }
 
         output.append("  ")
-                .append(String.format("%-" + SKILL_LABEL_WIDTH + "s", label))
+                .append(DisplayWidth.padRight(LocalizedText.skillLabel(label, language), SKILL_LABEL_WIDTH))
                 .append(join(skills))
                 .append("\n");
     }

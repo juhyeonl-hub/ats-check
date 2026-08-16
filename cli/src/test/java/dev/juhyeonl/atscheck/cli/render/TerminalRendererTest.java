@@ -111,6 +111,77 @@ class TerminalRendererTest {
                 """);
     }
 
+    @Test
+    void rendersKoreanVerdictLabelsSkillBlockAndHardFilterWithoutTranslatingEvidence() {
+        CheckResult result = new CheckResult(
+                Verdict.SKIP,
+                List.of(
+                        finding(
+                                RuleId.LANGUAGE,
+                                Status.FAIL,
+                                "Finnish required",
+                                evidence("Fluent Finnish and English are required")
+                        ),
+                        finding(RuleId.EXPERIENCE_YEARS, Status.PASS, "not specified"),
+                        finding(RuleId.DEGREE, Status.PASS, "not required")
+                ),
+                new SkillGap(
+                        orderedSet("java"),
+                        orderedSet("kotlin"),
+                        orderedSet("terraform")
+                ),
+                true
+        );
+
+        String rendered = TerminalRenderer.render(result, TerminalLanguage.KO);
+
+        assertThat(rendered)
+                .contains("판정: 제외")
+                .contains("✗ 언어        핀란드어 필수")
+                .contains("✓ 연차        명시 없음")
+                .contains("✓ 학위        요구 없음")
+                .contains("\"Fluent Finnish and English are required\"")
+                .contains("부족 (필수)", "부족 (우대)", "보유")
+                .contains("하드 필터에서 분석을 중단했습니다.");
+        assertThat(rendered).doesNotContain("VERDICT:", "Language", "Analysis stopped at hard filter.");
+    }
+
+    @Test
+    void koreanFindingSummariesStartAtSameDisplayColumn() {
+        CheckResult result = new CheckResult(
+                Verdict.APPLY,
+                List.of(
+                        finding(RuleId.LANGUAGE, Status.PASS, "English only"),
+                        finding(RuleId.SENIORITY_LEVEL, Status.PASS, "Backend Engineer (no seniority marker)"),
+                        finding(RuleId.EXPERIENCE_YEARS, Status.WARN, "3+ years (profile: 2, tolerance: 1)"),
+                        finding(RuleId.DEGREE, Status.PASS, "not required")
+                ),
+                null,
+                false
+        );
+
+        String rendered = TerminalRenderer.render(result, TerminalLanguage.KO);
+
+        assertThat(List.of(
+                displayIndexOf(rendered, "영어만 요구"),
+                displayIndexOf(rendered, "Backend Engineer (레벨 표시 없음)"),
+                displayIndexOf(rendered, "3년 이상 (내 경력: 2, 허용: 1) — 경계선"),
+                displayIndexOf(rendered, "요구 없음")
+        )).containsOnly(16);
+    }
+
+    @Test
+    void unmappedKoreanSummaryFallsBackToEnglish() {
+        CheckResult result = new CheckResult(
+                Verdict.APPLY,
+                List.of(finding(RuleId.LANGUAGE, Status.PASS, "custom summary")),
+                null,
+                false
+        );
+
+        assertThat(TerminalRenderer.render(result, TerminalLanguage.KO)).contains("custom summary");
+    }
+
     private static Finding finding(RuleId rule, Status status, String summary) {
         return finding(rule, status, summary, List.of());
     }
@@ -131,5 +202,13 @@ class TerminalRendererTest {
 
     private static Set<String> orderedSet(String... values) {
         return new LinkedHashSet<>(List.of(values));
+    }
+
+    private static int displayIndexOf(String rendered, String text) {
+        String line = rendered.lines()
+                .filter(candidate -> candidate.contains(text))
+                .findFirst()
+                .orElseThrow();
+        return DisplayWidth.width(line.substring(0, line.indexOf(text)));
     }
 }
