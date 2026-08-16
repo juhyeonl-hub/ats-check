@@ -16,7 +16,7 @@ final class ToneAnalyzer {
     private static final int PATTERN_FLAGS = Pattern.CASE_INSENSITIVE | Pattern.UNICODE_CASE;
     private static final String BOUNDARY_BEFORE = "(?<![\\p{L}\\p{N}_])";
     private static final String BOUNDARY_AFTER = "(?![\\p{L}\\p{N}_])";
-    static final List<String> REQUIRED_TONES = List.of(
+    static final List<String> DECLARATIVE_REQUIRED_TONES = List.of(
             "must",
             "required",
             "is a requirement",
@@ -25,25 +25,36 @@ final class ToneAnalyzer {
             "expected",
             "we expect",
             "you will need",
+            "minimum"
+    );
+    static final List<String> MODIFIER_REQUIRED_TONES = List.of(
             "fluent",
             "native",
             "proficiency in",
-            "minimum"
+            "working proficiency"
     );
+    static final List<String> REQUIRED_TONES = requiredTones();
     static final List<String> NICE_TONES = List.of(
             "is a plus",
             "nice to have",
             "beneficial",
             "advantageous",
             "preferred",
-            "ideally",
             "familiarity with",
             "would be nice",
             "appreciated",
             "bonus"
     );
+    private static final String NICE_NOUNS = "(?:plus|bonus|advantage|asset|benefit|merit|strength)";
     private static final List<Pattern> NICE_TONE_PATTERNS = List.of(
             boundedPattern("(?:is|are)\\s+(?:a|an)\\s+(?:plus|bonus|advantage|asset)"),
+            boundedPattern(
+                    "(?:(?:is|are|would\\s+be|will\\s+be|can\\s+be)\\s+)?"
+                            + "(?:considered|seen|regarded|viewed|counted|treated)\\s+"
+                            + "(?:as\\s+)?(?:(?:a|an)\\s+)?"
+                            + NICE_NOUNS
+            ),
+            boundedPattern("counts\\s+as\\s+(?:a|an)\\s+" + NICE_NOUNS),
             boundedPattern("(?:is|are)\\s+(?:appreciated|beneficial|welcome|nice\\s+to\\s+have)")
     );
     static final List<String> HEDGES = List.of(
@@ -54,7 +65,8 @@ final class ToneAnalyzer {
             "understanding of",
             "exposure to",
             "willingness to learn",
-            "ability to learn"
+            "ability to learn",
+            "ideally"
     );
     static final List<String> NEGATIONS = List.of(
             "not required",
@@ -90,7 +102,18 @@ final class ToneAnalyzer {
             return new Analysis(RequirementLevel.NEGATED, false, false, signals);
         }
 
-        boolean hasRequiredTone = addMatches(clauseText, REQUIRED_TONES, Signal.Type.REQUIRED_TONE, signals);
+        boolean hasDeclarativeRequiredTone = addMatches(
+                clauseText,
+                DECLARATIVE_REQUIRED_TONES,
+                Signal.Type.REQUIRED_TONE,
+                signals
+        );
+        boolean hasModifierRequiredTone = addMatches(
+                clauseText,
+                MODIFIER_REQUIRED_TONES,
+                Signal.Type.REQUIRED_TONE,
+                signals
+        );
         boolean hasNiceTone = addMatches(clauseText, NICE_TONES, Signal.Type.NICE_TONE, signals);
         boolean hasExplicitNiceTone = addPatternMatches(
                 clauseText,
@@ -101,8 +124,19 @@ final class ToneAnalyzer {
         hasNiceTone = hasExplicitNiceTone || hasNiceTone;
         boolean hasHedge = addMatches(clauseText, HEDGES, Signal.Type.HEDGE, signals);
 
-        RequirementLevel toneLevel = toneLevel(hasRequiredTone, hasNiceTone);
+        RequirementLevel toneLevel = toneLevel(
+                hasDeclarativeRequiredTone,
+                hasModifierRequiredTone,
+                hasNiceTone,
+                hasExplicitNiceTone
+        );
         return new Analysis(toneLevel, hasHedge, hasExplicitNiceTone, signals);
+    }
+
+    private static List<String> requiredTones() {
+        List<String> tones = new ArrayList<>(DECLARATIVE_REQUIRED_TONES);
+        tones.addAll(MODIFIER_REQUIRED_TONES);
+        return List.copyOf(tones);
     }
 
     private boolean addMatches(
@@ -172,11 +206,22 @@ final class ToneAnalyzer {
         return text.strip().replaceAll("\\s+", " ").toLowerCase(Locale.ROOT);
     }
 
-    private RequirementLevel toneLevel(boolean hasRequiredTone, boolean hasNiceTone) {
-        if (hasRequiredTone && hasNiceTone) {
+    private RequirementLevel toneLevel(
+            boolean hasDeclarativeRequiredTone,
+            boolean hasModifierRequiredTone,
+            boolean hasNiceTone,
+            boolean hasExplicitNiceTone
+    ) {
+        if (hasDeclarativeRequiredTone && hasNiceTone) {
             return RequirementLevel.AMBIGUOUS;
         }
-        if (hasRequiredTone) {
+        if (hasModifierRequiredTone && hasExplicitNiceTone) {
+            return RequirementLevel.NICE;
+        }
+        if (hasModifierRequiredTone && hasNiceTone) {
+            return RequirementLevel.AMBIGUOUS;
+        }
+        if (hasDeclarativeRequiredTone || hasModifierRequiredTone) {
             return RequirementLevel.REQUIRED;
         }
         if (hasNiceTone) {

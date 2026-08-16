@@ -1,0 +1,19 @@
+Backend Developer
+Harborline Systems builds workflow tools for logistics teams.
+The team works in small product slices with clear written handovers.
+
+Requirements:
+- 2 years of backend development in a product team.
+- Bachelor's degree or equivalent practical experience is acceptable.
+- Java and Spring Boot for service work.
+- PostgreSQL and Docker in daily development.
+- REST APIs for integrations with reporting and planning systems.
+- Clear English for planning notes and release summaries.
+- Fluent Finnish skills are considered as an advantage.
+
+Nice to have:
+- Interest in logistics workflows is appreciated.
+
+Benefits:
+- Hybrid work from Helsinki with flexible office days.
+- Lunch benefit, wellness budget, and practical equipment support.

@@ -10,6 +10,8 @@ import dev.juhyeonl.atscheck.core.model.Signal;
 import java.util.List;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.ValueSource;
 
 class SectionClassifierTest {
     @Test
@@ -101,6 +103,73 @@ class SectionClassifierTest {
         assertThat(pluralAdvantage.signals())
                 .extracting(Signal::type, Signal::dictionaryEntry)
                 .contains(tuple(Signal.Type.NICE_TONE, "are an advantage"));
+    }
+
+    @ParameterizedTest(name = "{0}")
+    @ValueSource(strings = {
+            "Fluent Finnish skills are considered as an advantage.",
+            "Finnish is considered a plus.",
+            "Finnish skills are seen as an advantage.",
+            "Finnish is regarded as a benefit.",
+            "Finnish would be considered an asset.",
+            "Knowledge of Finnish counts as a plus."
+    })
+    @DisplayName("considered/seen/regarded/counts as 우대 관용구를 NICE로 분류한다")
+    void classifiesConsideredAdvantageFamilyAsNice(String sentence) {
+        Clause clause = onlyClause(sentence);
+
+        assertThat(clause.level()).isEqualTo(RequirementLevel.NICE);
+    }
+
+    @ParameterizedTest(name = "{0}")
+    @ValueSource(strings = {
+            "Fluent Finnish is considered a strength.",
+            "Native Finnish is regarded as an advantage.",
+            "Proficiency in Finnish is considered a plus.",
+            "Working proficiency in Finnish is considered a merit."
+    })
+    @DisplayName("명시적 우대 관용구는 수식어형 필수 마커를 이긴다")
+    void explicitNiceIdiomsBeatModifierRequiredTones(String sentence) {
+        Clause clause = onlyClause(sentence);
+
+        assertThat(clause.level()).isEqualTo(RequirementLevel.NICE);
+    }
+
+    @Test
+    @DisplayName("서술형 필수 마커와 명시적 우대 관용구가 같은 절에 있으면 AMBIGUOUS로 분류한다")
+    void explicitNiceIdiomWithDeclarativeRequiredToneIsAmbiguous() {
+        Clause clause = onlyClause("Fluent Finnish is required, though Swedish is considered a plus.");
+
+        assertThat(clause.level()).isEqualTo(RequirementLevel.AMBIGUOUS);
+        assertThat(clause.signals())
+                .extracting(Signal::type, Signal::dictionaryEntry)
+                .contains(
+                        tuple(Signal.Type.REQUIRED_TONE, "required"),
+                        tuple(Signal.Type.NICE_TONE, "is considered a plus")
+                );
+    }
+
+    @Test
+    @DisplayName("Task 14 회귀 문장들은 기존 기대 수준을 유지한다")
+    void keepsTask14RegressionSentenceLevels() {
+        assertThat(onlyClause("Fluent Finnish is required.").level())
+                .isEqualTo(RequirementLevel.REQUIRED);
+        assertThat(onlyClause("Fluent Finnish and English are required.").level())
+                .isEqualTo(RequirementLevel.REQUIRED);
+        assertThat(onlyClause("We expect fluent Finnish.").level())
+                .isEqualTo(RequirementLevel.REQUIRED);
+        assertThat(onlyClause("Java is mandatory.").level())
+                .isEqualTo(RequirementLevel.REQUIRED);
+        assertThat(onlyClause("Finnish is a plus.").level())
+                .isEqualTo(RequirementLevel.NICE);
+        assertThat(onlyClause("Kotlin and Kubernetes are a plus.").level())
+                .isEqualTo(RequirementLevel.NICE);
+        assertThat(onlyClause("Finnish is not required.").level())
+                .isEqualTo(RequirementLevel.NEGATED);
+        assertThat(onlyClause("Working knowledge of Finnish.").level())
+                .isEqualTo(RequirementLevel.AMBIGUOUS);
+        assertThat(onlyClause("Ideally 5+ years of experience.").level())
+                .isEqualTo(RequirementLevel.AMBIGUOUS);
     }
 
     @Test
